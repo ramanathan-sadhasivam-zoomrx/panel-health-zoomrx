@@ -15,11 +15,22 @@ const NpsTrendChart = ({ dateRange, data }: NpsTrendChartProps) => {
     year: item.year
   }));
 
-  const xAxisFormatter = (value: string, index: number) => {
-    const item = chartData[index];
-    if (!item) return '';
-    const monthAbbr = item.month.slice(0, 3);
-    const yearShort = String(item.year).slice(-2);
+  const xAxisFormatter = (value: string) => {
+    // Parse the date value (e.g., "2024-07") to get month and year
+    const [year, month] = value.split('-');
+    const monthNum = parseInt(month, 10);
+    const yearNum = parseInt(year, 10);
+    
+    // Get month abbreviation
+    const monthNames = [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
+    const monthAbbr = monthNames[monthNum - 1];
+    
+    // Get last 2 digits of year
+    const yearShort = String(yearNum).slice(-2);
+    
     return `${monthAbbr}'${yearShort}`;
   };
 
