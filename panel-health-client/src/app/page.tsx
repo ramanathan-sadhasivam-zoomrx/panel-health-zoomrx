@@ -84,18 +84,24 @@ export default function DashboardPage() {
       // Use the experience score calculated by the backend
       const uxScore = survey.experienceScore || 0;
       
-      // Calculate individual contributions for display (for breakdown visualization)
+      // Calculate individual contributions for display (matching backend logic exactly)
       const normalizedUserRating = (Math.max(1, survey.userRating) - 1) / 9;
       const userRating = normalizedUserRating * 35;
       const normalizedUserSentiment = (survey.userSentiment + 1) / 2;
       const sentiment = normalizedUserSentiment * 25;
       const dropoff = (100 - survey.dropOffPercent) / 100 * 20;
       const screenout = (100 - survey.screenOutPercent) / 100 * 15;
-      const questionCount = Math.max(-5,
-        survey.questionsInScreener <= 12
-          ? ((12 - survey.questionsInScreener) / 9) * 5
-          : ((12 - survey.questionsInScreener) / 18) * 5
-      );
+      
+      // Fix screener questions calculation to match backend exactly
+      let questionCount;
+      if (survey.questionsInScreener <= 12) {
+        questionCount = ((12 - survey.questionsInScreener) / 9) * 5;
+      } else {
+        const excessQuestions = survey.questionsInScreener - 12;
+        const maxExcessForMinScore = 18; // 30 - 12 = 18 questions to reach -5%
+        const negativeContribution = Math.min(5, (excessQuestions / maxExcessForMinScore) * 5);
+        questionCount = -negativeContribution;
+      }
       
       return {
         ...survey,

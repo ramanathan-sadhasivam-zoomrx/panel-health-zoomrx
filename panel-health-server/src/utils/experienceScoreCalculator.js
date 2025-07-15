@@ -141,8 +141,9 @@ class ExperienceScoreCalculator {
     const cappedCount = Math.min(50, screenerQuestionCount);
     
     if (cappedCount <= 12) {
-      // 3 questions (min) gives maximum 5% contribution, 12 gives 0%
-      return ((12 - cappedCount) / 9) * 5;
+      // 0 questions gives maximum 5% contribution, 12 gives 0%
+      // Formula: (12 - questions) / 12 * 5
+      return ((12 - cappedCount) / 12) * 5;
     } else {
       // More than 12 questions gives negative contribution (minimum -5%)
       // For 30+ questions, we want -5% contribution

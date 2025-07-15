@@ -23,17 +23,18 @@ class SurveyModel {
     }
 
     try {
-      // Query 1: Get all surveys with basic info and last wave ID
+      // Query 1: Get all surveys with basic info and most recent active project wave
       const surveysQuery = `
         SELECT 
           s.id,
           lsl.surveyls_title as surveyTitle,
-          pw.crm_element_id as crmId,
+          recent_pw.crm_element_id as crmId,
           s.status,
           s.type as survey_type,
           w.id as wave_id,
           pw.id as project_wave_id,
           p.id as project_id,
+          recent_pw.id as recent_project_wave_id,
           last_wave.id as last_wave_id
         FROM surveys s
         LEFT JOIN lime_surveys_languagesettings lsl ON lsl.surveyls_survey_id = s.id
@@ -49,6 +50,19 @@ class SurveyModel {
           WHERE status = 1
           GROUP BY survey_id
         ) last_wave ON s.id = last_wave.survey_id
+        LEFT JOIN (
+          SELECT 
+            s2.id as survey_id,
+            pw2.id as id,
+            pw2.project_id,
+            pw2.crm_element_id,
+            ROW_NUMBER() OVER (PARTITION BY s2.id ORDER BY pw2.id DESC) as rn
+          FROM surveys s2
+          LEFT JOIN waves w2 ON s2.id = w2.survey_id AND w2.status = 1
+          LEFT JOIN project_waves_waves pww2 ON w2.id = pww2.wave_id
+          LEFT JOIN project_waves pw2 ON pww2.project_wave_id = pw2.id
+          WHERE pw2.id IS NOT NULL
+        ) recent_pw ON s.id = recent_pw.survey_id AND recent_pw.rn = 1
         WHERE s.active = 1
         ORDER BY s.id DESC
       `;
@@ -190,7 +204,7 @@ class SurveyModel {
         experienceCategory: experienceScore.category,
         experienceColor: experienceScore.color,
         experienceBreakdown: experienceScore.breakdown,
-        adminPortalLink: `https://ap.zoomrx.com/#/projects/view/${survey.project_id}?pw-id=${survey.project_wave_id}&s-id=${survey.id}&wave-id=${survey.last_wave_id}`,
+        adminPortalLink: `https://ap.zoomrx.com/#/projects/view/${survey.project_id}?pw-id=${survey.recent_project_wave_id}&s-id=${survey.id}&wave-id=${survey.last_wave_id}`,
         calculationDetails: {
           dropoff: {
             total_users: surveyMetrics.total_users || 0,
@@ -207,12 +221,6 @@ class SurveyModel {
         }
       };
     }));
-
-    // Log some sample project IDs for debugging
-    console.log('🔍 PROJECT ID DEBUGGING:');
-    surveysWithMetrics.slice(0, 3).forEach((survey, index) => {
-      console.log(`Survey ${index + 1}: ID=${survey.id}, Project ID=${survey.project_id}, Project Wave ID=${survey.project_wave_id}, Admin Link=${survey.adminPortalLink}`);
-    });
 
     return surveysWithMetrics;
   }
@@ -234,13 +242,11 @@ class SurveyModel {
       // Use the experience score calculator with raw values
       const experienceScore = experienceScoreCalculator.calculateExperienceScore(rawData);
 
-      // Ensure the final score is clamped to 0-100
-      const finalScore = Math.max(0, Math.min(100, experienceScore.score));
-
+      // The experience score calculator already handles 0-100 clamping
       return {
-        experienceScore: finalScore,
-        category: experienceScoreCalculator.getScoreCategory(finalScore),
-        color: experienceScoreCalculator.getScoreColor(finalScore),
+        experienceScore: experienceScore.score,
+        category: experienceScoreCalculator.getScoreCategory(experienceScore.score),
+        color: experienceScoreCalculator.getScoreColor(experienceScore.score),
         breakdown: experienceScore.breakdown
       };
     } catch (error) {
@@ -270,12 +276,13 @@ class SurveyModel {
       SELECT 
         s.id,
         lsl.surveyls_title as surveyTitle,
-        pw.crm_element_id as crmId,
+        recent_pw.crm_element_id as crmId,
         s.status,
         s.type as survey_type,
         w.id as wave_id,
         pw.id as project_wave_id,
         p.id as project_id,
+        recent_pw.id as recent_project_wave_id,
         last_wave.id as last_wave_id
       FROM surveys s
       LEFT JOIN lime_surveys_languagesettings lsl ON lsl.surveyls_survey_id = s.id
@@ -290,7 +297,20 @@ class SurveyModel {
         FROM waves 
         WHERE status = 1
         GROUP BY survey_id
-      ) last_wave ON s.id = last_wave.survey_id
+        ) last_wave ON s.id = last_wave.survey_id
+      LEFT JOIN (
+        SELECT 
+          s2.id as survey_id,
+          pw2.id as id,
+          pw2.project_id,
+          pw2.crm_element_id,
+          ROW_NUMBER() OVER (PARTITION BY s2.id ORDER BY pw2.id DESC) as rn
+        FROM surveys s2
+        LEFT JOIN waves w2 ON s2.id = w2.survey_id AND w2.status = 1
+        LEFT JOIN project_waves_waves pww2 ON w2.id = pww2.wave_id
+        LEFT JOIN project_waves pw2 ON pww2.project_wave_id = pw2.id
+        WHERE pw2.id IS NOT NULL
+      ) recent_pw ON s.id = recent_pw.survey_id AND recent_pw.rn = 1
       WHERE s.id = ?
         AND s.active = 1
     `;
@@ -308,7 +328,7 @@ class SurveyModel {
         screenOutPercent: await this.calculateScreenOutPercent(id),
         questionsInScreener: await this.getQuestionsInScreener(id),
         qualitativeComments: await this.getQualitativeComments(id),
-        adminPortalLink: `https://ap.zoomrx.com/#/projects/view/${survey.project_id}?pw-id=${survey.project_wave_id}&s-id=${survey.id}&wave-id=${survey.last_wave_id}`
+        adminPortalLink: `https://ap.zoomrx.com/#/projects/view/${survey.project_id}?pw-id=${survey.recent_project_wave_id}&s-id=${survey.id}&wave-id=${survey.last_wave_id}`
       };
     } catch (error) {
       console.error('Error in getSurveyById:', error);
