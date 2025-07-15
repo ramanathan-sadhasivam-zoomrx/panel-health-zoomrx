@@ -127,7 +127,7 @@ class SurveyController {
               screenoutRate: { value: 15.0, contribution: 12.8, weight: 15 },
               screenerQuestionCount: { value: 8, contribution: 2.2, weight: 5 }
             },
-            adminPortalLink: "https://ap.zoomrx.com/#/projects/view/1550?pw-id=8390"
+            adminPortalLink: "https://ap.zoomrx.com/#/projects/view/1550?pw-id=8390&s-id=1&wave-id=119114"
           },
           {
             id: 2,
@@ -151,7 +151,7 @@ class SurveyController {
               screenoutRate: { value: 20.0, contribution: 12.0, weight: 15 },
               screenerQuestionCount: { value: 12, contribution: 0.0, weight: 5 }
             },
-            adminPortalLink: "https://ap.zoomrx.com/#/projects/view/1551?pw-id=8391"
+            adminPortalLink: "https://ap.zoomrx.com/#/projects/view/1551?pw-id=8391&s-id=2&wave-id=119115"
           }
         ]
       });

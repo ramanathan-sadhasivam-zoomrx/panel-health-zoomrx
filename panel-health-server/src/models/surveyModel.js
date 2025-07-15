@@ -23,7 +23,7 @@ class SurveyModel {
     }
 
     try {
-      // Query 1: Get all surveys with basic info
+      // Query 1: Get all surveys with basic info and last wave ID
       const surveysQuery = `
         SELECT 
           s.id,
@@ -33,13 +33,22 @@ class SurveyModel {
           s.type as survey_type,
           w.id as wave_id,
           pw.id as project_wave_id,
-          p.id as project_id
+          p.id as project_id,
+          last_wave.id as last_wave_id
         FROM surveys s
         LEFT JOIN lime_surveys_languagesettings lsl ON lsl.surveyls_survey_id = s.id
         LEFT JOIN waves w ON s.id = w.survey_id
         LEFT JOIN project_waves_waves pww ON w.id = pww.wave_id
         LEFT JOIN project_waves pw ON pww.project_wave_id = pw.id
         LEFT JOIN projects p ON pw.project_id = p.id
+        LEFT JOIN (
+          SELECT 
+            survey_id,
+            MAX(id) as id
+          FROM waves 
+          WHERE status = 1
+          GROUP BY survey_id
+        ) last_wave ON s.id = last_wave.survey_id
         WHERE s.active = 1
         ORDER BY s.id DESC
       `;
@@ -181,7 +190,7 @@ class SurveyModel {
         experienceCategory: experienceScore.category,
         experienceColor: experienceScore.color,
         experienceBreakdown: experienceScore.breakdown,
-        adminPortalLink: `https://ap.zoomrx.com/#/projects/view/${survey.project_id}?pw-id=${survey.project_wave_id}`,
+        adminPortalLink: `https://ap.zoomrx.com/#/projects/view/${survey.project_id}?pw-id=${survey.project_wave_id}&s-id=${survey.id}&wave-id=${survey.last_wave_id}`,
         calculationDetails: {
           dropoff: {
             total_users: surveyMetrics.total_users || 0,
@@ -266,13 +275,22 @@ class SurveyModel {
         s.type as survey_type,
         w.id as wave_id,
         pw.id as project_wave_id,
-        p.id as project_id
+        p.id as project_id,
+        last_wave.id as last_wave_id
       FROM surveys s
       LEFT JOIN lime_surveys_languagesettings lsl ON lsl.surveyls_survey_id = s.id
       LEFT JOIN waves w ON s.id = w.survey_id
       LEFT JOIN project_waves_waves pww ON w.id = pww.wave_id
       LEFT JOIN project_waves pw ON pww.project_wave_id = pw.id
       LEFT JOIN projects p ON pw.project_id = p.id
+      LEFT JOIN (
+        SELECT 
+          survey_id,
+          MAX(id) as id
+        FROM waves 
+        WHERE status = 1
+        GROUP BY survey_id
+      ) last_wave ON s.id = last_wave.survey_id
       WHERE s.id = ?
         AND s.active = 1
     `;
@@ -290,7 +308,7 @@ class SurveyModel {
         screenOutPercent: await this.calculateScreenOutPercent(id),
         questionsInScreener: await this.getQuestionsInScreener(id),
         qualitativeComments: await this.getQualitativeComments(id),
-        adminPortalLink: `https://ap.zoomrx.com/#/projects/view/${survey.project_id}?pw-id=${survey.project_wave_id}`
+        adminPortalLink: `https://ap.zoomrx.com/#/projects/view/${survey.project_id}?pw-id=${survey.project_wave_id}&s-id=${survey.id}&wave-id=${survey.last_wave_id}`
       };
     } catch (error) {
       console.error('Error in getSurveyById:', error);
