@@ -7,16 +7,36 @@ interface NpsTrendChartProps {
 }
 
 const NpsTrendChart = ({ dateRange, data }: NpsTrendChartProps) => {
+  console.log('📊 Chart received data:', data);
+  
   // Transform data to work with the new chart component
-  const chartData = data.map(item => ({
-    date: item.date,
-    nps: item.nps,
-    month: item.month,
-    year: item.year
-  }));
+  const chartData = data.map(item => {
+    // Create date string in YYYY-MM format
+    const date = `${item.year}-${item.month.toString().padStart(2, '0')}`;
+    
+    return {
+      date: date,
+      nps: item.nps_score, // Backend returns nps_score, not nps
+      month: new Date(item.year, item.month - 1).toLocaleString('default', { month: 'short' }),
+      year: item.year,
+      quarter: `Q${Math.ceil(item.month / 3)}-${item.year}`,
+      total_response_count: item.total_response_count,
+      promoter_count: item.promoter_count,
+      detractor_count: item.detractor_count,
+      passive_count: item.passive_count
+    };
+  });
+
+  console.log('📊 Transformed chart data:', chartData.slice(0, 5));
 
   const xAxisFormatter = (value: string) => {
-    // Parse the date value (e.g., "2024-07") to get month and year
+    // Check if this is quarterly data (contains 'Q' in the date)
+    if (value.includes('Q')) {
+      // For quarterly data, format as "Q1-2025"
+      return value;
+    }
+    
+    // For monthly data, parse the date value (e.g., "2024-07") to get month and year
     const [year, month] = value.split('-');
     const monthNum = parseInt(month, 10);
     const yearNum = parseInt(year, 10);
@@ -37,15 +57,24 @@ const NpsTrendChart = ({ dateRange, data }: NpsTrendChartProps) => {
   const tooltipLabelFormatter = (label: string) => {
     const item = chartData.find(d => d.date === label);
     if (!item) return label;
+    
+    // Check if this is quarterly data
+    if (item.quarter) {
+      return item.quarter;
+    }
+    
     return `${item.month} ${item.year}`;
   };
+
+  // Determine chart title based on frequency
+  const chartTitle = dateRange.frequency === 'quarterly' ? 'Quarterly NPS Scores' : 'Monthly NPS Scores';
 
   return (
     <LineChart
       data={chartData}
       xKey="date"
       yKey="nps"
-      title="Monthly NPS Scores"
+      title={chartTitle}
       height={380}
       showArea={true}
       showGrid={true}

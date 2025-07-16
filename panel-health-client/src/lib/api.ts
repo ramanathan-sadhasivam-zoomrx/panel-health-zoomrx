@@ -75,7 +75,9 @@ export const npsAPI = {
       headers: getAuthHeaders()
     });
     return handleResponse(response);
-  }
+  },
+
+
 };
 
 // Survey API

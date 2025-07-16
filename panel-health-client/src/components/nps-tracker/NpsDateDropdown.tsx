@@ -5,9 +5,10 @@ import NpsCustomDateModal from "./NpsCustomDateModal";
 interface NpsDateDropdownProps {
   dateRange: any;
   setDateRange: (range: any) => void;
+  npsData?: any[]; // Add NPS data prop
 }
 
-const NpsDateDropdown = ({ dateRange, setDateRange }: NpsDateDropdownProps) => {
+const NpsDateDropdown = ({ dateRange, setDateRange, npsData = [] }: NpsDateDropdownProps) => {
   const [modalOpen, setModalOpen] = useState(false);
 
   const dropdownOptions = [
@@ -38,7 +39,8 @@ const NpsDateDropdown = ({ dateRange, setDateRange }: NpsDateDropdownProps) => {
         open={modalOpen} 
         setOpen={setModalOpen} 
         dateRange={dateRange} 
-        setDateRange={setDateRange} 
+        setDateRange={setDateRange}
+        npsData={npsData}
       />
     </>
   );
