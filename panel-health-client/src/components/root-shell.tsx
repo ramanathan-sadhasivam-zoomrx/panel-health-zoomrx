@@ -7,11 +7,10 @@ import { Sidebar } from "@/components/sidebar";
 import { LoadingProvider } from "@/contexts/LoadingContext";
 
 export default function RootShell({ children }: { children: React.ReactNode }) {
-  const [selected, setSelected] = useState("nps");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  const sidebarWidth = isSidebarCollapsed ? 80 : 256;
-  const headerHeight = 60;
+  const sidebarWidth = isSidebarCollapsed ? 64 : 192;
+  const headerHeight = 50;
 
   return (
     <ThemeProvider
@@ -22,7 +21,7 @@ export default function RootShell({ children }: { children: React.ReactNode }) {
       disableTransitionOnChange
     >
       <LoadingProvider>
-        <Sidebar selected={selected} onSelect={setSelected} isCollapsed={isSidebarCollapsed} setIsCollapsed={setIsSidebarCollapsed} />
+        <Sidebar isCollapsed={isSidebarCollapsed} setIsCollapsed={setIsSidebarCollapsed} />
         <Header isSidebarCollapsed={isSidebarCollapsed} />
         <div
           style={{

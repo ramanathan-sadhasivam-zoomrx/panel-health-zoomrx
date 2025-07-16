@@ -5,21 +5,21 @@ interface NpsDetailedTableProps {
   data: any;
 }
 
-const tableContainer = "overflow-x-auto bg-white rounded-[5px] shadow border border-[#E0E7EF] p-4 mt-2";
-const thStyle = "p-2 border-b text-center bg-[#F6F8FB] font-bold text-[#1E41EB] text-xs whitespace-nowrap";
-const thLeft = "p-2 border-b text-left bg-[#F6F8FB] font-bold text-[#1E41EB] text-xs whitespace-nowrap";
-const tdStyle = "p-2 text-center text-xs font-medium whitespace-nowrap";
-const tdLeft = "p-2 text-left text-xs font-medium whitespace-nowrap";
+const tableContainer = "bg-white rounded-[5px] shadow border border-[#E0E7EF] p-2 mt-2";
+const thStyle = "p-1 border-b text-center bg-[#F6F8FB] font-bold text-[#1E41EB] text-[5px] sm:text-[6px] md:text-[7px] lg:text-[8px] xl:text-[10px] leading-tight";
+const thLeft = "p-1 border-b text-left bg-[#F6F8FB] font-bold text-[#1E41EB] text-[5px] sm:text-[6px] md:text-[7px] lg:text-[8px] xl:text-[10px] leading-tight";
+const tdStyle = "p-1 text-center text-[5px] sm:text-[6px] md:text-[7px] lg:text-[8px] xl:text-[10px] font-medium whitespace-nowrap";
+const tdLeft = "p-1 text-left text-[5px] sm:text-[6px] md:text-[7px] lg:text-[8px] xl:text-[10px] font-medium whitespace-nowrap";
 
 const NpsTag = ({ value }: { value: number }) => (
-  <span className={`px-2 py-1 rounded text-white text-xs font-bold ${value >= 0 ? "bg-green-600" : "bg-red-600"}`}>{value}</span>
+  <span className={`px-1 py-0.5 rounded text-white text-[5px] sm:text-[6px] md:text-[7px] lg:text-[8px] xl:text-[10px] font-bold inline-block text-center min-w-[2rem] ${value >= 0 ? "bg-green-600" : "bg-red-600"}`}>{value}</span>
 );
 
 const NpsDetailedTable = ({ dateRange, data }: NpsDetailedTableProps) => {
   console.log('📋 Table received data:', data);
   
   const isQuarterly = dateRange.frequency === 'quarterly';
-  const periodLabel = isQuarterly ? 'Quarter' : 'Month Number';
+  const periodLabel = isQuarterly ? 'Quarter' : 'Month';
   
   // Extract data from the response
   const { completes = [], screenouts = [], dashboard = [], postSurvey = [], overall = [] } = data;
@@ -97,28 +97,53 @@ const NpsDetailedTable = ({ dateRange, data }: NpsDetailedTableProps) => {
   
   return (
     <div className={tableContainer} style={{ fontFamily: 'Manrope, sans-serif' }}>
-      <table className="w-full text-sm">
+      <table className="w-full text-[5px] sm:text-[6px] md:text-[7px] lg:text-[8px] xl:text-[10px] table-fixed">
         <thead className="sticky top-0 z-10">
           <tr>
-            <th className={thLeft} rowSpan={2}>{periodLabel}</th>
-            <th className={thStyle} rowSpan={2}>Year</th>
-            <th className={thStyle} colSpan={5}>Completes (Post Survey)</th>
-            <th className={thStyle} colSpan={5}>Screenouts (Post Survey)</th>
-            <th className={thStyle} rowSpan={2}>NPS Dashboard</th>
-            <th className={thStyle} rowSpan={2}>NPS Post Survey</th>
-            <th className={thStyle} rowSpan={2} style={{ backgroundColor: '#1E41EB', color: 'white' }}>NPS Overall</th>
+            <th className={thLeft} rowSpan={2} style={{ width: '7%' }}>{periodLabel}</th>
+            <th className={thStyle} rowSpan={2} style={{ width: '5%' }}>Year</th>
+            <th className={thStyle} colSpan={5} style={{ width: '32%' }}>
+              <div className="flex flex-col">
+                <span>Completes</span>
+                <span>(Post Survey)</span>
+              </div>
+            </th>
+            <th className={thStyle} colSpan={5} style={{ width: '32%' }}>
+              <div className="flex flex-col">
+                <span>Screenouts</span>
+                <span>(Post Survey)</span>
+              </div>
+            </th>
+            <th className={thStyle} rowSpan={2} style={{ width: '10%' }}>
+              <div className="flex flex-col">
+                <span>NPS</span>
+                <span>Dashboard</span>
+              </div>
+            </th>
+            <th className={thStyle} rowSpan={2} style={{ width: '10%' }}>
+              <div className="flex flex-col">
+                <span>NPS Post</span>
+                <span>Survey</span>
+              </div>
+            </th>
+            <th className={thStyle} rowSpan={2} style={{ width: '10%' }}>
+              <div className="flex flex-col">
+                <span>NPS</span>
+                <span>Overall</span>
+              </div>
+            </th>
           </tr>
           <tr>
-            <th className={thStyle}>Count</th>
-            <th className={thStyle}>Promoters</th>
-            <th className={thStyle}>Detractors</th>
-            <th className={thStyle}>NPS</th>
-            <th className={thStyle}>Average NPS Rating</th>
-            <th className={thStyle}>Count</th>
-            <th className={thStyle}>Promoters</th>
-            <th className={thStyle}>Detractors</th>
-            <th className={thStyle}>NPS</th>
-            <th className={thStyle}>Average NPS Rating</th>
+            <th className={thStyle} style={{ width: '6.4%' }}>Count</th>
+            <th className={thStyle} style={{ width: '6.4%' }}>Promoters</th>
+            <th className={thStyle} style={{ width: '6.4%' }}>Detractors</th>
+            <th className={thStyle} style={{ width: '6.4%' }}>NPS</th>
+            <th className={thStyle} style={{ width: '6.4%' }}>Avg Rating</th>
+            <th className={thStyle} style={{ width: '6.4%' }}>Count</th>
+            <th className={thStyle} style={{ width: '6.4%' }}>Promoters</th>
+            <th className={thStyle} style={{ width: '6.4%' }}>Detractors</th>
+            <th className={thStyle} style={{ width: '6.4%' }}>NPS</th>
+            <th className={thStyle} style={{ width: '6.4%' }}>Avg Rating</th>
           </tr>
         </thead>
         <tbody>
@@ -176,7 +201,7 @@ const NpsDetailedTable = ({ dateRange, data }: NpsDetailedTableProps) => {
                 </td>
                 
                 {/* NPS Overall */}
-                <td className={tdStyle} style={{ backgroundColor: '#F0F4FF', fontWeight: 'bold' }}>
+                <td className={tdStyle}>
                   <NpsTag value={overall.nps_score || 0} />
                 </td>
               </tr>

@@ -55,7 +55,7 @@ const NpsTracker = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [cacheStatus, setCacheStatus] = useState('fresh'); // 'fresh' or 'cached'
+
 
   // Global loading context
   const { setLoadingTracker } = useLoading();
@@ -181,11 +181,9 @@ const NpsTracker = () => {
         if (cachedCompleteData) {
           console.log('📦 Using cached data for client-side filtering');
           responseData = cachedCompleteData;
-          setCacheStatus('cached');
         } else {
           console.log('📦 No cached data, fetching from server');
           setLoadingTracker("nps"); // Set global loading state
-          setCacheStatus('fresh');
           
           // Fetch time series data (without date filtering - get all data)
           const timeSeriesResponse = await npsAPI.getTimeSeriesData({ type: 'all' }, dateRange.frequency);
@@ -352,11 +350,7 @@ const NpsTracker = () => {
         <div className="flex-1">
           <NpsTabs tab={tab} setTab={setTab} dateRange={dateRange} />
         </div>
-        <div className="flex-shrink-0 flex items-center gap-2">
-          <div className="text-xs text-gray-500 flex items-center gap-1">
-            <div className={`w-2 h-2 rounded-full ${cacheStatus === 'fresh' ? 'bg-green-500' : 'bg-blue-500'}`}></div>
-            {cacheStatus === 'fresh' ? 'Live data' : 'Cached data'}
-          </div>
+        <div className="flex-shrink-0">
           <NpsDateDropdown dateRange={dateRange} setDateRange={setDateRange} npsData={npsData} />
         </div>
       </div>
