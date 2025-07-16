@@ -66,7 +66,6 @@ const NpsTracker = () => {
     try {
       // Clear client-side cache to force fresh fetch
       setCachedCompleteData(null);
-      setCacheStatus('fresh');
       console.log('🔄 Client cache cleared for auto-refresh');
     } catch (error) {
       console.error('Error auto-refreshing cache:', error);
@@ -115,8 +114,17 @@ const NpsTracker = () => {
           dateRange.to.month && dateRange.to.year) {
         startDate = new Date(dateRange.from.year, dateRange.from.month - 1, 1);
         endDate = new Date(dateRange.to.year, dateRange.to.month, 0); // Last day of the month
+        console.log('🔍 Custom date range:', {
+          from: dateRange.from,
+          to: dateRange.to,
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString()
+        });
+        console.log('🔍 Custom date range debugging - Raw dateRange:', JSON.stringify(dateRange, null, 2));
       } else {
         console.log('🔍 Invalid custom date range format');
+        console.log('🔍 dateRange.from:', dateRange.from);
+        console.log('🔍 dateRange.to:', dateRange.to);
         return data;
       }
     } else {
@@ -129,28 +137,47 @@ const NpsTracker = () => {
     }
 
     console.log(`🔍 Filtering from ${startDate.toISOString()} to ${endDate.toISOString()}`);
+    
+    // Log available data before filtering
+    console.log('🔍 Available data before filtering:');
+    if (data.overall) {
+      const availableYears = [...new Set(data.overall.map((item: any) => item.year))].sort();
+      const availableMonths = data.overall.map((item: any) => `${item.year}-${item.month}`).sort();
+      console.log('🔍 Available years in overall data:', availableYears);
+      console.log('🔍 Available months in overall data:', availableMonths);
+    }
 
     // Filter each data type
     const filteredData = {
       overall: data.overall?.filter((item: any) => {
         const itemDate = new Date(item.year, item.month - 1);
-        return itemDate >= startDate && itemDate <= endDate;
+        const isInRange = itemDate >= startDate && itemDate <= endDate;
+        console.log(`🔍 Overall item ${item.year}-${item.month}: ${itemDate.toISOString()} - In range: ${isInRange}`);
+        return isInRange;
       }) || [],
       dashboard: data.dashboard?.filter((item: any) => {
         const itemDate = new Date(item.year, item.month - 1);
-        return itemDate >= startDate && itemDate <= endDate;
+        const isInRange = itemDate >= startDate && itemDate <= endDate;
+        console.log(`🔍 Dashboard item ${item.year}-${item.month}: ${itemDate.toISOString()} - In range: ${isInRange}`);
+        return isInRange;
       }) || [],
       postSurvey: data.postSurvey?.filter((item: any) => {
         const itemDate = new Date(item.year, item.month - 1);
-        return itemDate >= startDate && itemDate <= endDate;
+        const isInRange = itemDate >= startDate && itemDate <= endDate;
+        console.log(`🔍 PostSurvey item ${item.year}-${item.month}: ${itemDate.toISOString()} - In range: ${isInRange}`);
+        return isInRange;
       }) || [],
       completes: data.completes?.filter((item: any) => {
         const itemDate = new Date(item.month + '-01');
-        return itemDate >= startDate && itemDate <= endDate;
+        const isInRange = itemDate >= startDate && itemDate <= endDate;
+        console.log(`🔍 Completes item ${item.month}: ${itemDate.toISOString()} - In range: ${isInRange}`);
+        return isInRange;
       }) || [],
       screenouts: data.screenouts?.filter((item: any) => {
         const itemDate = new Date(item.month + '-01');
-        return itemDate >= startDate && itemDate <= endDate;
+        const isInRange = itemDate >= startDate && itemDate <= endDate;
+        console.log(`🔍 Screenouts item ${item.month}: ${itemDate.toISOString()} - In range: ${isInRange}`);
+        return isInRange;
       }) || []
     };
 
@@ -189,6 +216,15 @@ const NpsTracker = () => {
           const timeSeriesResponse = await npsAPI.getTimeSeriesData({ type: 'all' }, dateRange.frequency);
           console.log('📈 Raw response:', timeSeriesResponse);
           
+          // Log all available years and months in the response
+          if (timeSeriesResponse?.overall) {
+            const allYears = [...new Set(timeSeriesResponse.overall.map((item: any) => item.year))].sort();
+            console.log('📈 Available years in response:', allYears);
+            
+            const allMonths = timeSeriesResponse.overall.map((item: any) => `${item.year}-${item.month}`).sort();
+            console.log('📈 Available months in response:', allMonths);
+          }
+          
           responseData = timeSeriesResponse || {};
           
           // Cache the complete dataset with timestamp
@@ -223,9 +259,21 @@ const NpsTracker = () => {
         
         setNpsData(chartData);
 
-        // Calculate summary data from the filtered time series data
-        const currentMonth = chartData[0]; // Most recent month
-        const previousMonth = chartData[1]; // Second most recent month
+        // Calculate summary data from the COMPLETE dataset (not filtered)
+        // This ensures summary cards always show current, previous, and best NPS regardless of date range
+        const completeOverallData = responseData.overall || [];
+        console.log('📊 Complete overall data for summary calculation:', completeOverallData.length, 'entries');
+        
+        // Sort complete data by date (newest first) for summary calculation
+        const sortedCompleteData = [...completeOverallData].sort((a: NpsDataItem, b: NpsDataItem) => {
+          if (a.year !== b.year) return b.year - a.year; // Newest year first
+          return b.month - a.month; // Newest month first
+        });
+        
+        console.log('📊 Sorted complete data (newest first):', sortedCompleteData.slice(0, 5).map(item => `${item.year}-${item.month}: ${item.nps_score}`));
+        
+        const currentMonth = sortedCompleteData[0]; // Most recent month from complete data
+        const previousMonth = sortedCompleteData[1]; // Second most recent month from complete data
         
         // Calculate current fiscal year (Oct 2024 - Sep 2025)
         const currentDate = new Date();
@@ -243,8 +291,8 @@ const NpsTracker = () => {
         console.log(`📅 Current month: ${currentMonthNum}`);
         console.log(`📅 Fiscal year: ${fiscalYearStart}-${fiscalYearEnd} (Oct ${fiscalYearStart} - Sep ${fiscalYearEnd})`);
         
-        // Filter data for current fiscal year
-        const fiscalYearData = chartData.filter((item: NpsDataItem) => {
+        // Filter data for current fiscal year (using complete data)
+        const fiscalYearData = sortedCompleteData.filter((item: NpsDataItem) => {
           const itemDate = new Date(item.year, item.month - 1);
           const itemYear = itemDate.getFullYear();
           const itemMonth = itemDate.getMonth() + 1;
@@ -267,13 +315,13 @@ const NpsTracker = () => {
         console.log(`📅 Fiscal year data points: ${fiscalYearData.length}`);
         console.log(`📅 Fiscal year data:`, fiscalYearData.map((item: NpsDataItem) => `${item.year}-${item.month}: ${item.nps_score}`));
         
-        // Find best NPS in current fiscal year
+        // Find best NPS in current fiscal year (from complete data)
         const bestMonth = fiscalYearData.length > 0 
           ? fiscalYearData.reduce((best: NpsDataItem, current: NpsDataItem) => {
               console.log(`📅 Comparing ${current.year}-${current.month}: ${current.nps_score} vs ${best.year}-${best.month}: ${best.nps_score}`);
               return current.nps_score > best.nps_score ? current : best;
             }, fiscalYearData[0])
-          : chartData[0] || {} as NpsDataItem;
+          : sortedCompleteData[0] || {} as NpsDataItem;
         
         console.log(`📅 Best month selected: ${bestMonth.year}-${bestMonth.month}: ${bestMonth.nps_score}`);
         
@@ -351,7 +399,7 @@ const NpsTracker = () => {
           <NpsTabs tab={tab} setTab={setTab} dateRange={dateRange} />
         </div>
         <div className="flex-shrink-0">
-          <NpsDateDropdown dateRange={dateRange} setDateRange={setDateRange} npsData={npsData} />
+          <NpsDateDropdown dateRange={dateRange} setDateRange={setDateRange} npsData={cachedCompleteData?.overall || []} />
         </div>
       </div>
       {/* Chart or table below */}

@@ -56,6 +56,8 @@ const LineChartComponent = React.forwardRef<HTMLDivElement, LineChartProps>(
     tooltipLabelFormatter,
     ...props 
   }, ref) => {
+    // Determine if we need criss-cross labeling (more than 12 data points)
+    const needsCrissCross = data.length > 12;
     return (
       <div
         ref={ref}
@@ -74,7 +76,7 @@ const LineChartComponent = React.forwardRef<HTMLDivElement, LineChartProps>(
           </div>
         )}
         <ResponsiveContainer width="100%" height={height}>
-          <RechartsLineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+          <RechartsLineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: needsCrissCross ? 40 : 20 }}>
             {showGrid && (
               <CartesianGrid 
                 strokeDasharray="3 3" 
@@ -88,13 +90,15 @@ const LineChartComponent = React.forwardRef<HTMLDivElement, LineChartProps>(
               tickFormatter={xAxisFormatter}
               style={{ 
                 fontFamily: 'Manrope, sans-serif', 
-                fontSize: 11,
+                fontSize: needsCrissCross ? 10 : 11,
                 color: '#64748b'
               }}
-              interval={0}
-              dy={10}
+              interval={needsCrissCross ? 1 : 0}
+              dy={needsCrissCross ? 20 : 10}
               axisLine={{ stroke: '#E0E7EF' }}
               tickLine={{ stroke: '#E0E7EF' }}
+              angle={needsCrissCross ? -45 : 0}
+              textAnchor={needsCrissCross ? "end" : "middle"}
             />
             <YAxis 
               tickFormatter={yAxisFormatter}

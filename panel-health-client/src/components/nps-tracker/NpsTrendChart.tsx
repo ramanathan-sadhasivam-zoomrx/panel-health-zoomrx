@@ -19,17 +19,22 @@ const NpsTrendChart = ({ dateRange, data }: NpsTrendChartProps) => {
       nps: item.nps_score, // Backend returns nps_score, not nps
       month: new Date(item.year, item.month - 1).toLocaleString('default', { month: 'short' }),
       year: item.year,
+      monthNum: item.month, // Add month number for proper sorting
       quarter: `Q${Math.ceil(item.month / 3)}-${item.year}`,
       total_response_count: item.total_response_count,
       promoter_count: item.promoter_count,
       detractor_count: item.detractor_count,
       passive_count: item.passive_count
     };
+  }).sort((a, b) => {
+    // Sort in chronological order (oldest first) for the chart
+    if (a.year !== b.year) return a.year - b.year;
+    return a.monthNum - b.monthNum;
   });
 
   console.log('📊 Transformed chart data:', chartData.slice(0, 5));
 
-  const xAxisFormatter = (value: string) => {
+  const xAxisFormatter = (value: string, index: number) => {
     // Check if this is quarterly data (contains 'Q' in the date)
     if (value.includes('Q')) {
       // For quarterly data, format as "Q1-2025"
@@ -58,8 +63,8 @@ const NpsTrendChart = ({ dateRange, data }: NpsTrendChartProps) => {
     const item = chartData.find(d => d.date === label);
     if (!item) return label;
     
-    // Check if this is quarterly data
-    if (item.quarter) {
+    // Check if this is quarterly data based on frequency
+    if (dateRange.frequency === 'quarterly') {
       return item.quarter;
     }
     

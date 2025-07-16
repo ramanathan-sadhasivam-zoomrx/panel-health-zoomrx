@@ -89,8 +89,8 @@ const NpsDetailedTable = ({ dateRange, data }: NpsDetailedTableProps) => {
       };
     })
     .sort((a, b) => {
-      if (a.year !== b.year) return a.year - b.year;
-      return a.month - b.month;
+      if (a.year !== b.year) return b.year - a.year;
+      return b.month - a.month;
     });
 
   console.log('📋 Transformed table data:', tableData.slice(0, 3));
