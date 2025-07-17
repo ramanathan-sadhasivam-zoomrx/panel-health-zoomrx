@@ -12,6 +12,7 @@ import { Loader2, Info } from 'lucide-react';
 import type { Survey } from '@/data/dummySurveys';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useLoading } from '@/contexts/LoadingContext';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 interface EnrichedSurvey extends Survey {
   uxScore: number;
@@ -24,7 +25,7 @@ interface EnrichedSurvey extends Survey {
   };
 }
 
-export default function DashboardPage() {
+function DashboardPage() {
   const [filter, setFilter] = useState("top5");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -279,113 +280,117 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F6F8FB]">
-      <main className="w-full pt-8 pb-8 px-6">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <Tabs value={filter} onValueChange={handleFilterChange}>
-              <TabsList className="bg-transparent flex gap-2">
-                <TabsTrigger value="top5" className="flex items-center gap-2 px-6 py-2 rounded-lg font-bold text-base">
-                  Top 5 Surveys
-                </TabsTrigger>
-                <TabsTrigger value="lowest5" className="flex items-center gap-2 px-6 py-2 rounded-lg font-bold text-base">
-                  Lowest 5 Surveys
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-          <div className="flex items-center gap-2">
-            <Dialog>
-              {mounted ? (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <DialogTrigger asChild>
-                      <Button
-                        aria-label="Help"
-                        className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background hover:bg-accent hover:text-accent-foreground dark:border-input dark:hover:bg-input/50 size-9"
-                        data-slot="dialog-trigger"
-                        data-state="closed"
-                        type="button"
-                      >
-                        <Info className="h-4 w-4 text-blue-600" aria-label="Info" />
-                      </Button>
-                    </DialogTrigger>
-                  </TooltipTrigger>
-                  <TooltipContent sideOffset={8}>
-                    How UX Score is Calculated?
-                  </TooltipContent>
-                </Tooltip>
-              ) : (
-                <DialogTrigger asChild>
-                  <Button
-                    aria-label="Help"
-                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background hover:bg-accent hover:text-accent-foreground dark:border-input dark:hover:bg-input/50 size-9"
-                    data-slot="dialog-trigger"
-                    data-state="closed"
-                    type="button"
-                  >
-                    <Info className="h-4 w-4 text-blue-600" aria-label="Info" />
-                  </Button>
-                </DialogTrigger>
-              )}
-              <DialogContent style={{ minWidth: 800, minHeight: 480, maxWidth: 900, maxHeight: 700, background: '#fff' }}>
-                <DialogHeader>
-                  <DialogTitle>How is the UX Score Calculated?</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 text-sm">
-                  <p><strong>Definition:</strong> The UX Score is a composite metric (0-100) that quantifies the overall respondent experience for each survey, based on user feedback, sentiment, drop-off, screen-out, and screener length.</p>
-                  <div>
-                    <strong>Terminologies:</strong>
-                    <ul className="list-disc list-inside ml-4 mt-1">
-                      <li><strong>User Rating:</strong> Average user rating (1-10) collected at the end of survey</li>
-                      <li><strong>User Sentiment:</strong> Average sentiment score (-1 to 1) based on qualitative feedbacks collected at the end of survey</li>
-                      <li><strong>Drop-off %:</strong> Percentage of users who started but did not complete the survey</li>
-                      <li><strong>Screen-out %:</strong> Percentage of users who were screened-out from the survey</li>
-                      <li><strong># Que in Screener:</strong> Total number of questions shown in the screener section of survey</li>
-                    </ul>
-                  </div>
-                  <div>
-                    <strong>Formula:</strong>
-                    <div className="bg-muted rounded p-2 my-2 text-xs font-mono">
-                      UX Score = User Rating Contribution + Sentiment Contribution + DropoffContribution + ScreenoutContribution + Question Count Contribution<br/>
-                      (Clamped to 0-100)
+    <ProtectedRoute>
+      <div className="min-h-screen bg-[#F6F8FB]">
+        <main className="w-full pt-8 pb-8 px-6">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-4">
+              <Tabs value={filter} onValueChange={handleFilterChange}>
+                <TabsList className="bg-transparent flex gap-2">
+                  <TabsTrigger value="top5" className="flex items-center gap-2 px-6 py-2 rounded-lg font-bold text-base">
+                    Top 5 Surveys
+                  </TabsTrigger>
+                  <TabsTrigger value="lowest5" className="flex items-center gap-2 px-6 py-2 rounded-lg font-bold text-base">
+                    Lowest 5 Surveys
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+            <div className="flex items-center gap-2">
+              <Dialog>
+                {mounted ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <DialogTrigger asChild>
+                        <Button
+                          aria-label="Help"
+                          className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background hover:bg-accent hover:text-accent-foreground dark:border-input dark:hover:bg-input/50 size-9"
+                          data-slot="dialog-trigger"
+                          data-state="closed"
+                          type="button"
+                        >
+                          <Info className="h-4 w-4 text-blue-600" aria-label="Info" />
+                        </Button>
+                      </DialogTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent sideOffset={8}>
+                      How UX Score is Calculated?
+                    </TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <DialogTrigger asChild>
+                    <Button
+                      aria-label="Help"
+                      className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background hover:bg-accent hover:text-accent-foreground dark:border-input dark:hover:bg-input/50 size-9"
+                      data-slot="dialog-trigger"
+                      data-state="closed"
+                      type="button"
+                    >
+                      <Info className="h-4 w-4 text-blue-600" aria-label="Info" />
+                    </Button>
+                  </DialogTrigger>
+                )}
+                <DialogContent style={{ minWidth: 800, minHeight: 480, maxWidth: 900, maxHeight: 700, background: '#fff' }}>
+                  <DialogHeader>
+                    <DialogTitle>How is the UX Score Calculated?</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 text-sm">
+                    <p><strong>Definition:</strong> The UX Score is a composite metric (0-100) that quantifies the overall respondent experience for each survey, based on user feedback, sentiment, drop-off, screen-out, and screener length.</p>
+                    <div>
+                      <strong>Terminologies:</strong>
+                      <ul className="list-disc list-inside ml-4 mt-1">
+                        <li><strong>User Rating:</strong> Average user rating (1-10) collected at the end of survey</li>
+                        <li><strong>User Sentiment:</strong> Average sentiment score (-1 to 1) based on qualitative feedbacks collected at the end of survey</li>
+                        <li><strong>Drop-off %:</strong> Percentage of users who started but did not complete the survey</li>
+                        <li><strong>Screen-out %:</strong> Percentage of users who were screened-out from the survey</li>
+                        <li><strong># Que in Screener:</strong> Total number of questions shown in the screener section of survey</li>
+                      </ul>
                     </div>
-                    <ul className="list-disc list-inside ml-4 mt-1">
-                      <li><strong>User Rating Contribution:</strong> normalizedUserRating * 35</li>
-                      <li><strong>Sentiment Contribution:</strong> normalizedSentiment * 25</li>
-                      <li><strong>Drop-off Contribution:</strong> (100 - dropoffRate) / 100 * 20</li>
-                      <li><strong>Screen-out Contribution:</strong> (100 - screenoutRate) / 100 * 15</li>
-                      <li><strong>Question Count Contribution:</strong> ((12 - questionCount) / 9) * 5 (if ≤12), else ((12 - questionCount) / 18) * 5</li>
-                    </ul>
+                    <div>
+                      <strong>Formula:</strong>
+                      <div className="bg-muted rounded p-2 my-2 text-xs font-mono">
+                        UX Score = User Rating Contribution + Sentiment Contribution + DropoffContribution + ScreenoutContribution + Question Count Contribution<br/>
+                        (Clamped to 0-100)
+                      </div>
+                      <ul className="list-disc list-inside ml-4 mt-1">
+                        <li><strong>User Rating Contribution:</strong> normalizedUserRating * 35</li>
+                        <li><strong>Sentiment Contribution:</strong> normalizedSentiment * 25</li>
+                        <li><strong>Drop-off Contribution:</strong> (100 - dropoffRate) / 100 * 20</li>
+                        <li><strong>Screen-out Contribution:</strong> (100 - screenoutRate) / 100 * 15</li>
+                        <li><strong>Question Count Contribution:</strong> ((12 - questionCount) / 9) * 5 (if ≤12), else ((12 - questionCount) / 18) * 5</li>
+                      </ul>
+                    </div>
                   </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
-        </div>
-                <section>
-          
-          {/* Survey Cards */}
-          <div 
-            key={`survey-list-${filter}`} // Force re-render when filter changes
-            className="flex flex-col gap-[15px] w-full max-w-6xl mx-auto"
-          >
-            {filteredSurveys.map((survey, idx) => (
-              <SurveyCard
-                key={`${filter}-${survey.crmId}-${idx}`} // Unique key for each survey in each filter
-                survey={survey}
-                expanded={expanded === survey.crmId}
-                onExpand={() => setExpanded(expanded === survey.crmId ? null : survey.crmId)}
-                cardWidth="100%"
-                style={{ 
-                  marginTop: idx === 0 ? 0 : undefined, 
-                  width: '100%'
-                }}
-              />
-            ))}
-          </div>
-        </section>
-      </main>
-    </div>
+                  <section>
+            
+            {/* Survey Cards */}
+            <div 
+              key={`survey-list-${filter}`} // Force re-render when filter changes
+              className="flex flex-col gap-[15px] w-full max-w-6xl mx-auto"
+            >
+              {filteredSurveys.map((survey, idx) => (
+                <SurveyCard
+                  key={`${filter}-${survey.crmId}-${idx}`} // Unique key for each survey in each filter
+                  survey={survey}
+                  expanded={expanded === survey.crmId}
+                  onExpand={() => setExpanded(expanded === survey.crmId ? null : survey.crmId)}
+                  cardWidth="100%"
+                  style={{ 
+                    marginTop: idx === 0 ? 0 : undefined, 
+                    width: '100%'
+                  }}
+                />
+              ))}
+            </div>
+          </section>
+        </main>
+      </div>
+    </ProtectedRoute>
   );
 }
+
+export default DashboardPage;
