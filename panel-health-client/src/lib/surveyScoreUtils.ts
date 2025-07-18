@@ -67,6 +67,35 @@ export interface EnrichedSurvey extends Survey {
     screenout: number;
     questionCount: number;
   };
+  xscore?: number;
+  bayesianMetrics?: {
+    adjustedRating: number;
+    adjustedSentiment: number;
+    dropoffRate: number;
+    screenoutRate: number;
+    normalizedRating: number;
+    normalizedSentiment: number;
+    normalizedDropoff: number;
+    normalizedScreenout: number;
+    normalizedScreener: number;
+  };
+  smoothingInfo?: {
+    K: number;
+    ratingWeight: number;
+    globalRatingWeight: number;
+    sentimentWeight: number;
+    globalSentimentWeight: number;
+  };
+  rawData?: {
+    ratingCount: number;
+    sentimentCount: number;
+    avgRating: number;
+    avgSentiment: number;
+    dropoffs: number;
+    totalAttempts: number;
+    screenouts: number;
+    screenerQuestionCount: number;
+  };
 }
 
 type ScoreInput = {

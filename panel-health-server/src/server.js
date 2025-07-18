@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 
 // Import routes
@@ -15,16 +16,13 @@ app.use(express.urlencoded({ extended: true }));
 
 // CORS configuration
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: 'http://localhost:3000', // Frontend running on port 3000
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Preflight handler
-app.options('*', cors());
-
-// Routes
+// API Routes
 app.use('/api/nps', npsRoutes);
 app.use('/api/surveys', surveyRoutes);
 
@@ -48,21 +46,24 @@ app.get('/api/test-db', async (req, res) => {
     console.log('waves count:', wavesCount[0].count);
     
     // Test specific wave
-    const [wave83005] = await connection.execute('SELECT * FROM waves WHERE id = 83005');
-    console.log('Wave 83005 exists:', wave83005.length > 0);
-    
-    connection.release();
+    const [wave] = await connection.execute('SELECT * FROM waves WHERE id = 119114 LIMIT 1');
+    console.log('Test wave 119114:', wave);
     
     res.json({
       success: true,
-      tables: tables.map(t => Object.values(t)[0]),
+      message: 'Database connection successful',
+      tableCount: tables.length,
       userWavesCount: userWavesCount[0].count,
       wavesCount: wavesCount[0].count,
-      wave83005Exists: wave83005.length > 0
+      testWave: wave[0] || null
     });
   } catch (error) {
     console.error('Database test error:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({
+      success: false,
+      error: 'Database connection failed',
+      details: error.message
+    });
   }
 });
 
@@ -75,11 +76,6 @@ app.get('/health', (req, res) => {
 app.use((err, req, res, next) => {
   console.error('Server error:', err);
   res.status(500).json({ error: 'Internal server error' });
-});
-
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Route not found' });
 });
 
 app.listen(PORT, () => {

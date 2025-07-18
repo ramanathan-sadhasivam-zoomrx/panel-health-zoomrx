@@ -27,15 +27,20 @@ export function SurveyCard({ survey, expanded, onExpand, cardWidth, style }: Sur
     surveyTitle,
     crmId,
     uxScore,
-    userRating,
-    userSentiment,
-    dropOffPercent,
-    screenOutPercent,
-    questionsInScreener,
+    userRating = 0,
+    userSentiment = 0,
+    dropOffPercent = 0,
+    screenOutPercent = 0,
+    questionsInScreener = 0,
     qualitativeComments,
     adminPortalLink,
     contributions,
+    bayesianMetrics,
   } = survey;
+
+  // Use Bayesian metrics when available
+  const displayUserRating = bayesianMetrics?.adjustedRating || userRating;
+  const displayUserSentiment = bayesianMetrics?.adjustedSentiment || userSentiment;
 
   return (
     <div className="w-full" style={{ maxWidth: cardWidth || '48rem', ...style }}>
@@ -69,7 +74,9 @@ export function SurveyCard({ survey, expanded, onExpand, cardWidth, style }: Sur
             </div>
             <div className="flex flex-col justify-center items-end">
               <p className="text-2xl font-bold">{uxScore.toFixed(1)}</p>
-              <p className="text-xs text-muted-foreground">UX Score</p>
+              <p className="text-xs text-muted-foreground">
+                UX Score {survey.xscore !== null && survey.xscore !== undefined ? '(Bayesian)' : '(Legacy)'}
+              </p>
             </div>
           </div>
         </CardHeader>
@@ -78,17 +85,24 @@ export function SurveyCard({ survey, expanded, onExpand, cardWidth, style }: Sur
           <CardContent>
             <div className="space-y-4">
               <div>
-                <h3 className="font-semibold mb-2">UX Score Breakdown</h3>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold">UX Score Breakdown</h3>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs px-2 py-1 rounded-full ${survey.xscore !== null && survey.xscore !== undefined ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                      {survey.xscore !== null && survey.xscore !== undefined ? 'Bayesian XScore' : 'Legacy Score'}
+                    </span>
+                  </div>
+                </div>
                 {/* 5-column grid for metrics */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2">
                   <div className="flex flex-col items-center p-2 bg-muted rounded-lg">
                     <p className="text-xs font-medium whitespace-nowrap">User Rating</p>
-                    <p className="text-xs text-muted-foreground">{userRating.toFixed(1)}/10</p>
+                    <p className="text-xs text-muted-foreground">{displayUserRating.toFixed(1)}/10</p>
                     <p className="text-base font-bold">+{contributions.userRating.toFixed(1)}</p>
                   </div>
                   <div className="flex flex-col items-center p-2 bg-muted rounded-lg">
                     <p className="text-xs font-medium whitespace-nowrap">User Sentiment Score</p>
-                    <p className="text-xs text-muted-foreground">{userSentiment.toFixed(2)}</p>
+                    <p className="text-xs text-muted-foreground">{displayUserSentiment.toFixed(2)}</p>
                     <p className="text-base font-bold">+{contributions.sentiment.toFixed(1)}</p>
                   </div>
                   <div className="flex flex-col items-center p-2 bg-muted rounded-lg">

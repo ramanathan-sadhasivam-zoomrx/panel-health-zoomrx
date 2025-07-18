@@ -4,6 +4,12 @@ const surveyController = require('../controllers/surveyController');
 
 const router = express.Router();
 
+// Health check endpoint
+router.get('/health', surveyController.healthCheck);
+
+// Quick test endpoint for immediate testing
+router.get('/quick-test', surveyController.getQuickTestSurveys);
+
 // Get all surveys
 router.get('/', surveyController.getAllSurveys);
 

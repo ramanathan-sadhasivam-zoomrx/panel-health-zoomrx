@@ -10,6 +10,49 @@ export interface Survey {
   qualitativeComments: string[];
   adminPortalLink: string;
   experienceScore?: number; // UX score calculated by backend
+  xscore?: number; // Bayesian XScore
+  bayesianMetrics?: {
+    adjustedRating: number;
+    adjustedSentiment: number;
+    dropoffRate: number;
+    screenoutRate: number;
+    normalizedRating: number;
+    normalizedSentiment: number;
+    normalizedDropoff: number;
+    normalizedScreenout: number;
+    normalizedScreener: number;
+  };
+  breakdown?: {
+    userRating: {
+      value: number;
+      contribution: number;
+      weight: number;
+    };
+    userSentiment: {
+      value: number;
+      contribution: number;
+      weight: number;
+    };
+    dropoffRate: {
+      value: number;
+      contribution: number;
+      weight: number;
+    };
+    screenoutRate: {
+      value: number;
+      contribution: number;
+      weight: number;
+    };
+    screenerQuestionCount: {
+      value: number;
+      contribution: number;
+      weight: number;
+    };
+  };
+  status?: string;
+  survey_type?: string;
+  experienceCategory?: string;
+  experienceColor?: string;
 }
 
 export const dummySurveys: Survey[] = [
