@@ -58,7 +58,7 @@ export default function DashboardPage() {
         // First, test if backend is reachable
         console.log('🏥 FRONTEND: Testing backend connectivity...');
         try {
-          const healthResponse = await fetch('http://localhost:3003/api/surveys/health');
+          const healthResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/surveys/health`);
           const healthData = await healthResponse.json();
           console.log('✅ FRONTEND: Backend health check successful:', healthData);
         } catch (healthError) {

@@ -1,5 +1,5 @@
 // Backend server URL from environment variable
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3003/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 async function handleResponse(response: Response) {
   if (!response.ok) {
