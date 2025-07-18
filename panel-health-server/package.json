@@ -19,6 +19,7 @@
     "jsonwebtoken": "^9.0.2",
     "moment": "^2.29.4",
     "mysql2": "^3.6.5",
+    "natural": "^8.1.0",
     "sentiment": "^5.0.2"
   },
   "devDependencies": {
