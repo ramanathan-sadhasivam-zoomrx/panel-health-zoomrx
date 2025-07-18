@@ -38,9 +38,11 @@ export function SurveyCard({ survey, expanded, onExpand, cardWidth, style }: Sur
     bayesianMetrics,
   } = survey;
 
-  // Use Bayesian metrics when available
-  const displayUserRating = bayesianMetrics?.adjustedRating || userRating;
-  const displayUserSentiment = bayesianMetrics?.adjustedSentiment || userSentiment;
+  // Use backend values for display - no frontend calculations
+  const displayUserRating = survey.breakdown?.userRating?.value || userRating;
+  const displayUserSentiment = survey.breakdown?.userSentiment?.value || userSentiment;
+  const displayDropoffRate = survey.breakdown?.dropoffRate?.value || dropOffPercent;
+  const displayScreenoutRate = survey.breakdown?.screenoutRate?.value || screenOutPercent;
 
   return (
     <div className="w-full" style={{ maxWidth: cardWidth || '48rem', ...style }}>
@@ -50,7 +52,7 @@ export function SurveyCard({ survey, expanded, onExpand, cardWidth, style }: Sur
         role="button"
         tabIndex={0}
         aria-expanded={expanded}
-        aria-label={`${surveyTitle} - UX Score: ${uxScore.toFixed(1)}`}
+        aria-label={`${surveyTitle} - UX Score: ${typeof uxScore === 'number' ? uxScore.toFixed(1) : '0.0'}`}
       >
         <CardHeader>
           <div className="flex justify-between items-center w-full">
@@ -73,7 +75,7 @@ export function SurveyCard({ survey, expanded, onExpand, cardWidth, style }: Sur
               <CardDescription>CRM ID: {crmId}</CardDescription>
             </div>
             <div className="flex flex-col justify-center items-end">
-              <p className="text-2xl font-bold">{uxScore.toFixed(1)}</p>
+              <p className="text-2xl font-bold">{typeof uxScore === 'number' ? uxScore.toFixed(1) : '0.0'}</p>
               <p className="text-xs text-muted-foreground">
                 UX Score {survey.xscore !== null && survey.xscore !== undefined ? '(Bayesian)' : '(Legacy)'}
               </p>
@@ -97,28 +99,28 @@ export function SurveyCard({ survey, expanded, onExpand, cardWidth, style }: Sur
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2">
                   <div className="flex flex-col items-center p-2 bg-muted rounded-lg">
                     <p className="text-xs font-medium whitespace-nowrap">User Rating</p>
-                    <p className="text-xs text-muted-foreground">{displayUserRating.toFixed(1)}/10</p>
-                    <p className="text-base font-bold">+{contributions.userRating.toFixed(1)}</p>
+                    <p className="text-xs text-muted-foreground">{typeof displayUserRating === 'number' ? displayUserRating.toFixed(1) : '0.0'}/10</p>
+                    <p className="text-base font-bold">+{typeof contributions.userRating === 'number' ? contributions.userRating.toFixed(1) : '0.0'}</p>
                   </div>
                   <div className="flex flex-col items-center p-2 bg-muted rounded-lg">
                     <p className="text-xs font-medium whitespace-nowrap">User Sentiment Score</p>
-                    <p className="text-xs text-muted-foreground">{displayUserSentiment.toFixed(2)}</p>
-                    <p className="text-base font-bold">+{contributions.sentiment.toFixed(1)}</p>
+                    <p className="text-xs text-muted-foreground">{typeof displayUserSentiment === 'number' ? displayUserSentiment.toFixed(2) : '0.00'}</p>
+                    <p className="text-base font-bold">+{typeof contributions.sentiment === 'number' ? contributions.sentiment.toFixed(1) : '0.0'}</p>
                   </div>
                   <div className="flex flex-col items-center p-2 bg-muted rounded-lg">
                     <p className="text-xs font-medium whitespace-nowrap">Drop-off Rate</p>
-                    <p className="text-xs text-muted-foreground">{dropOffPercent}%</p>
-                    <p className="text-base font-bold">+{contributions.dropoff.toFixed(1)}</p>
+                    <p className="text-xs text-muted-foreground">{typeof displayDropoffRate === 'number' ? displayDropoffRate.toFixed(1) : '0.0'}%</p>
+                    <p className="text-base font-bold">+{typeof contributions.dropoff === 'number' ? contributions.dropoff.toFixed(1) : '0.0'}</p>
                   </div>
                   <div className="flex flex-col items-center p-2 bg-muted rounded-lg">
                     <p className="text-xs font-medium whitespace-nowrap">Screen-out Rate</p>
-                    <p className="text-xs text-muted-foreground">{screenOutPercent}%</p>
-                    <p className="text-base font-bold">+{contributions.screenout.toFixed(1)}</p>
+                    <p className="text-xs text-muted-foreground">{typeof displayScreenoutRate === 'number' ? displayScreenoutRate.toFixed(1) : '0.0'}%</p>
+                    <p className="text-base font-bold">+{typeof contributions.screenout === 'number' ? contributions.screenout.toFixed(1) : '0.0'}</p>
                   </div>
                   <div className="flex flex-col items-center p-2 bg-muted rounded-lg">
                     <p className="text-xs font-medium whitespace-nowrap">Screener Questions</p>
-                    <p className={`text-xs text-muted-foreground ${contributions.questionCount < 0 ? 'text-destructive' : ''}`}>{questionsInScreener}</p>
-                    <p className="text-base font-bold">{contributions.questionCount >= 0 ? '+' : ''}{contributions.questionCount.toFixed(1)}</p>
+                    <p className={`text-xs text-muted-foreground ${typeof contributions.questionCount === 'number' && contributions.questionCount < 0 ? 'text-destructive' : ''}`}>{questionsInScreener}</p>
+                    <p className="text-base font-bold">{typeof contributions.questionCount === 'number' ? (contributions.questionCount >= 0 ? '+' : '') + contributions.questionCount.toFixed(1) : '0.0'}</p>
                   </div>
                 </div>
               </div>

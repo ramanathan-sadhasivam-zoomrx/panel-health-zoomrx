@@ -58,7 +58,7 @@ export default function DashboardPage() {
         // First, test if backend is reachable
         console.log('🏥 FRONTEND: Testing backend connectivity...');
         try {
-          const healthResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/surveys/health`);
+          const healthResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/surveys/health`);
           const healthData = await healthResponse.json();
           console.log('✅ FRONTEND: Backend health check successful:', healthData);
         } catch (healthError) {
@@ -152,120 +152,38 @@ export default function DashboardPage() {
   }, [setLoadingTracker]);
 
   const enrichedSurveys = useMemo(() => {
-    console.log('🔄 FRONTEND: Processing enriched surveys...');
+    console.log('🔄 FRONTEND: Processing surveys (display only - no calculations)...');
     console.log('🔄 FRONTEND: Total surveys to process:', surveys.length);
     
     const processed = surveys.map(survey => {
-      // ALWAYS use Bayesian XScore as primary score for consistency
-      // Only fallback to legacy experience score if xscore is completely missing
+      // Use backend XScore as primary score, fallback to legacy only if completely missing
       const uxScore = survey.xscore !== null && survey.xscore !== undefined && !isNaN(survey.xscore) 
         ? survey.xscore 
         : (survey.experienceScore || 0);
       
-      // Validate the UX score
-      if (isNaN(uxScore) || uxScore < 0 || uxScore > 100) {
-        console.warn(`⚠️  Invalid UX score for survey ${survey.id}: ${uxScore}`);
-      }
+      // Use backend breakdown data ONLY - no frontend calculations
+      const userRating = survey.breakdown?.userRating?.contribution || 0;
+      const sentiment = survey.breakdown?.userSentiment?.contribution || 0;
+      const dropoff = survey.breakdown?.dropoffRate?.contribution || 0;
+      const screenout = survey.breakdown?.screenoutRate?.contribution || 0;
+      const questionCount = survey.breakdown?.screenerQuestionCount?.contribution || 0;
       
-      // Use backend-calculated contributions when available (Bayesian), otherwise fallback to frontend calculations
-      let userRating, sentiment, dropoff, screenout, questionCount;
-      
-      if (survey.breakdown && survey.xscore !== null && survey.xscore !== undefined) {
-        // Use backend-calculated contributions from Bayesian XScore
-        userRating = survey.breakdown.userRating?.contribution || 0;
-        sentiment = survey.breakdown.userSentiment?.contribution || 0;
-        dropoff = survey.breakdown.dropoffRate?.contribution || 0;
-        screenout = survey.breakdown.screenoutRate?.contribution || 0;
-        questionCount = survey.breakdown.screenerQuestionCount?.contribution || 0;
-        
-        console.log(`🔍 SURVEY ${survey.id}: Using backend-calculated contributions:`, {
-          userRating: userRating.toFixed(2),
-          sentiment: sentiment.toFixed(2),
-          dropoff: dropoff.toFixed(2),
-          screenout: screenout.toFixed(2),
-          questionCount: questionCount.toFixed(2)
-        });
-        
-        // Log the actual breakdown values from backend
-        console.log(`🔍 SURVEY ${survey.id}: Backend breakdown values:`, {
-          userRatingValue: survey.breakdown.userRating?.value?.toFixed(2),
-          userSentimentValue: survey.breakdown.userSentiment?.value?.toFixed(3),
-          dropoffRateValue: survey.breakdown.dropoffRate?.value?.toFixed(2),
-          screenoutRateValue: survey.breakdown.screenoutRate?.value?.toFixed(2),
-          screenerQuestionValue: survey.breakdown.screenerQuestionCount?.value
-        });
-        
-        // Log the raw breakdown object for debugging
-        if (survey.id === 1488 || survey.crmId === '1488') {
-          console.log(`🔍 SURVEY 1488 - RAW BREAKDOWN:`, JSON.stringify(survey.breakdown, null, 2));
-        }
-      } else if (survey.xscore !== null && survey.xscore !== undefined) {
-        // Bayesian XScore exists but no breakdown - this is an error
-        console.warn(`⚠️  SURVEY ${survey.id}: Has Bayesian XScore (${survey.xscore}) but missing breakdown data!`);
-        console.warn(`⚠️  SURVEY ${survey.id}: Available keys:`, Object.keys(survey));
-        
-        // Fallback to frontend calculations
-        const userRatingValue = survey.userRating || 0;
-        const userSentimentValue = survey.userSentiment || 0;
-        
-        const normalizedUserRating = (Math.max(1, userRatingValue) - 1) / 9;
-        userRating = normalizedUserRating * 35;
-        const normalizedUserSentiment = (userSentimentValue + 1) / 2;
-        sentiment = normalizedUserSentiment * 25;
-        dropoff = (100 - survey.dropOffPercent) / 100 * 20;
-        screenout = (100 - survey.screenOutPercent) / 100 * 15;
-        
-        if (survey.questionsInScreener <= 12) {
-          questionCount = ((12 - survey.questionsInScreener) / 9) * 5;
-        } else {
-          const excessQuestions = survey.questionsInScreener - 12;
-          const maxExcessForMinScore = 18;
-          const negativeContribution = Math.min(5, (excessQuestions / maxExcessForMinScore) * 5);
-          questionCount = -negativeContribution;
-        }
-        
-        console.log(`🔍 SURVEY ${survey.id}: Using frontend-calculated contributions (fallback):`, {
-          userRating: userRating.toFixed(2),
-          sentiment: sentiment.toFixed(2),
-          dropoff: dropoff.toFixed(2),
-          screenout: screenout.toFixed(2),
-          questionCount: questionCount.toFixed(2)
+      // Log backend data for debugging
+      if (survey.breakdown) {
+        console.log(`🔍 SURVEY ${survey.id}: Backend breakdown data:`, {
+          userRating: typeof userRating === 'number' ? userRating.toFixed(2) : 'N/A',
+          sentiment: typeof sentiment === 'number' ? sentiment.toFixed(2) : 'N/A',
+          dropoff: typeof dropoff === 'number' ? dropoff.toFixed(2) : 'N/A',
+          screenout: typeof screenout === 'number' ? screenout.toFixed(2) : 'N/A',
+          questionCount: typeof questionCount === 'number' ? questionCount.toFixed(2) : 'N/A'
         });
       } else {
-        // Fallback to frontend calculations for legacy scores
-        const userRatingValue = survey.userRating || 0;
-        const userSentimentValue = survey.userSentiment || 0;
-        
-        // Calculate individual contributions for display (legacy logic)
-        const normalizedUserRating = (Math.max(1, userRatingValue) - 1) / 9;
-        userRating = normalizedUserRating * 35;
-        const normalizedUserSentiment = (userSentimentValue + 1) / 2;
-        sentiment = normalizedUserSentiment * 25;
-        dropoff = (100 - survey.dropOffPercent) / 100 * 20;
-        screenout = (100 - survey.screenOutPercent) / 100 * 15;
-        
-        // Fix screener questions calculation to match backend exactly
-        if (survey.questionsInScreener <= 12) {
-          questionCount = ((12 - survey.questionsInScreener) / 9) * 5;
-        } else {
-          const excessQuestions = survey.questionsInScreener - 12;
-          const maxExcessForMinScore = 18; // 30 - 12 = 18 questions to reach -5%
-          const negativeContribution = Math.min(5, (excessQuestions / maxExcessForMinScore) * 5);
-          questionCount = -negativeContribution;
-        }
-        
-        console.log(`🔍 SURVEY ${survey.id}: Using frontend-calculated contributions (legacy):`, {
-          userRating: userRating.toFixed(2),
-          sentiment: sentiment.toFixed(2),
-          dropoff: dropoff.toFixed(2),
-          screenout: screenout.toFixed(2),
-          questionCount: questionCount.toFixed(2)
-        });
+        console.warn(`⚠️  SURVEY ${survey.id}: No backend breakdown data available`);
       }
       
       return {
         ...survey,
-        uxScore, // Use backend-calculated score consistently
+        uxScore,
         contributions: {
           userRating,
           sentiment,
@@ -276,19 +194,8 @@ export default function DashboardPage() {
       };
     });
     
-    // Validate contribution calculations
-    processed.forEach((survey) => {
-      const calculatedTotal = survey.contributions.userRating + survey.contributions.sentiment + survey.contributions.dropoff + survey.contributions.screenout + survey.contributions.questionCount;
-      const difference = Math.abs(calculatedTotal - survey.uxScore);
-      
-      if (difference > 0.1) { // Allow small floating point differences
-        console.warn(`⚠️  CONTRIBUTION MISMATCH for survey ${survey.id}: Calculated total: ${calculatedTotal.toFixed(2)}, UX Score: ${survey.uxScore.toFixed(2)}, Difference: ${difference.toFixed(2)}`);
-      }
-    });
-    
-    console.log('✅ FRONTEND: Enriched surveys processing complete');
-    console.log('📊 FRONTEND: Sample enriched survey uxScore:', processed[0]?.uxScore);
-    console.log('📊 FRONTEND: Using Bayesian XScore for all surveys:', processed[0]?.xscore !== null);
+    console.log('✅ FRONTEND: Survey processing complete (backend data only)');
+    console.log('📊 FRONTEND: Sample survey uxScore:', processed[0]?.uxScore);
     
     return processed;
   }, [surveys]);
