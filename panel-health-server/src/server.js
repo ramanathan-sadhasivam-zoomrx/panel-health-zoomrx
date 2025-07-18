@@ -14,17 +14,26 @@ const PORT = process.env.PORT || 3003;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// CORS configuration
+// CORS configuration - Simple and reliable
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
   ? process.env.ALLOWED_ORIGINS.split(',') 
   : ['http://localhost:3000'];
 
-app.use(cors({
-  origin: allowedOrigins,
+// Add zoomrx domains to allowed origins
+const allAllowedOrigins = [
+  ...allowedOrigins,
+  'https://zeus-panelist-health-podb-patch-1-dev-0802230855.zoomrx.dev',
+  'https://zeus-panelist-health-podb-patch-1-dev-0802230855.zoomrx.com'
+];
+
+const corsOptions = {
+  origin: allAllowedOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
-}));
+};
+
+app.use(cors(corsOptions));
 
 // API Routes
 app.use('/api/nps', npsRoutes);
