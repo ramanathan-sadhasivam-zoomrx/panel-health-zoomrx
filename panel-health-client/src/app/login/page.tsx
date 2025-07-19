@@ -66,10 +66,10 @@ export default function LoginPage() {
 
       const tenantId = process.env.NEXT_PUBLIC_TENANT_ID;
       const clientId = process.env.NEXT_PUBLIC_CLIENT_ID;
-      const redirectUri = process.env.NEXT_PUBLIC_REDIRECT_URI || 
-        (typeof window !== 'undefined' && window.location.hostname.includes('zoomrx.dev') 
-          ? 'https://zeus-panelist-health-podb-patch-1-dev-0802230855.zoomrx.dev/auth/callback'
-          : 'http://localhost:3000/auth/callback');
+      // Force the correct redirect URI for staging
+      const redirectUri = (typeof window !== 'undefined' && window.location.hostname.includes('zoomrx.dev')) 
+        ? 'https://zeus-panelist-health-podb-patch-1-dev-0802230855.zoomrx.dev/auth/callback'
+        : (process.env.NEXT_PUBLIC_REDIRECT_URI || 'http://localhost:3000/auth/callback');
 
       // Debug: Log environment variables
       console.log('🔍 OAuth Environment Variables:', {

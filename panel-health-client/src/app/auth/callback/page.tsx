@@ -59,7 +59,8 @@ function AuthCallbackContent() {
         
         console.log('🔍 API Configuration:', {
           apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
-          hasApiBaseUrl: !!process.env.NEXT_PUBLIC_API_BASE_URL
+          hasApiBaseUrl: !!process.env.NEXT_PUBLIC_API_BASE_URL,
+          normalizedBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/api$/, '') || 'http://localhost:3003'
         });
         
         if (!codeVerifier) {
@@ -71,7 +72,9 @@ function AuthCallbackContent() {
 
         console.log('📡 Making API call to backend...');
         
-        const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/microsoft/callback`;
+        // Fix double /api issue by normalizing the URL
+        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/api$/, '') || 'http://localhost:3003';
+        const apiUrl = `${baseUrl}/api/auth/microsoft/callback`;
         const requestBody = {
           code,
           codeVerifier
