@@ -195,11 +195,11 @@ export default function DashboardPage() {
         : (survey.experienceScore || 0);
       
       // Use backend breakdown data ONLY - no frontend calculations
-      const userRating = survey.breakdown?.userRating?.contribution || 0;
-      const sentiment = survey.breakdown?.userSentiment?.contribution || 0;
-      const dropoff = survey.breakdown?.dropoffRate?.contribution || 0;
-      const screenout = survey.breakdown?.screenoutRate?.contribution || 0;
-      const questionCount = survey.breakdown?.screenerQuestionCount?.contribution || 0;
+      const userRating = survey.breakdown?.userRating?.contribution ?? 0;
+      const sentiment = survey.breakdown?.userSentiment?.contribution ?? 0;
+      const dropoff = survey.breakdown?.dropoffRate?.contribution ?? 0;
+      const screenout = survey.breakdown?.screenoutRate?.contribution ?? 0;
+      const questionCount = survey.breakdown?.screenerQuestionCount?.contribution ?? 0;
       
       // Log backend data for debugging
       if (survey.breakdown) {

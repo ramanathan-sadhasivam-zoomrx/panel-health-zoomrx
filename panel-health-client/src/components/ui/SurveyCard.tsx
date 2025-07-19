@@ -32,9 +32,15 @@ export function SurveyCard({ survey, expanded, onExpand, cardWidth, style }: Sur
     dropOffPercent = 0,
     screenOutPercent = 0,
     questionsInScreener = 0,
-    qualitativeComments,
+    qualitativeComments = [],
     adminPortalLink,
-    contributions,
+    contributions = {
+      userRating: 0,
+      sentiment: 0,
+      dropoff: 0,
+      screenout: 0,
+      questionCount: 0
+    },
     bayesianMetrics,
   } = survey;
 
@@ -124,7 +130,7 @@ export function SurveyCard({ survey, expanded, onExpand, cardWidth, style }: Sur
                   </div>
                 </div>
               </div>
-              {qualitativeComments.length > 0 && (
+              {qualitativeComments && qualitativeComments.length > 0 && (
                 <div>
                   <h3 className="font-semibold mb-2">Qualitative Comments</h3>
                   <div className="space-y-1">
