@@ -2,6 +2,36 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+
+// Configure console for better debugging
+const configureConsole = () => {
+  // Preserve console logs
+  console.log('🔧 Configuring console for OAuth debugging...');
+  
+  // Store original console methods
+  const originalLog = console.log;
+  const originalError = console.error;
+  
+  // Override console.log to add timestamps
+  console.log = (...args) => {
+    const timestamp = new Date().toISOString();
+    originalLog(`[${timestamp}]`, ...args);
+  };
+  
+  // Override console.error to add timestamps
+  console.error = (...args) => {
+    const timestamp = new Date().toISOString();
+    originalError(`[${timestamp}] ERROR:`, ...args);
+  };
+  
+  console.log('✅ Console configured for debugging');
+};
+
+// Call configuration on module load
+if (typeof window !== 'undefined') {
+  configureConsole();
+}
 
 // Generate PKCE code verifier and challenge
 function generatePKCE() {
@@ -57,12 +87,18 @@ export default function LoginPage() {
       // Generate PKCE values
       const { codeVerifier, codeChallenge } = await generatePKCE();
       
-      console.log('🔐 PKCE Generated:', {
+      // Store debug info in sessionStorage for debugging
+      const debugInfo = {
+        timestamp: new Date().toISOString(),
         hasCodeVerifier: !!codeVerifier,
         codeVerifierLength: codeVerifier ? codeVerifier.length : 0,
         hasCodeChallenge: !!codeChallenge,
         codeChallengeLength: codeChallenge ? codeChallenge.length : 0
-      });
+      };
+      
+      sessionStorage.setItem('oauthDebug', JSON.stringify(debugInfo));
+      
+      console.log('🔐 PKCE Generated:', debugInfo);
       
       // Store code verifier in sessionStorage
       sessionStorage.setItem('codeVerifier', codeVerifier);

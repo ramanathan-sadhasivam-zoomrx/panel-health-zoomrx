@@ -14,6 +14,10 @@ function AuthCallbackContent() {
   useEffect(() => {
     const handleCallback = async () => {
       try {
+        // Retrieve debug info from sessionStorage
+        const debugInfo = sessionStorage.getItem('oauthDebug');
+        console.log('🔍 Previous OAuth Debug Info:', debugInfo ? JSON.parse(debugInfo) : 'None');
+        
         console.log('🔄 OAuth Callback Started');
         console.log('🔍 URL Search Params:', {
           code: searchParams.get('code') ? 'Present' : 'Missing',
