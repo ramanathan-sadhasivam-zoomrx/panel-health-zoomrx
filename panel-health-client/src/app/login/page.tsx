@@ -57,8 +57,13 @@ export default function LoginPage() {
       // Use backend OAuth flow instead of frontend PKCE
       console.log('Initiating backend OAuth flow...');
       
-      // Redirect to backend OAuth endpoint
-      window.location.href = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/microsoft`;
+      // Get the base URL without /api suffix
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/api$/, '') || 'http://localhost:3003';
+      const oauthUrl = `${baseUrl}/api/auth/microsoft`;
+      
+      console.log('🔍 OAuth URL:', oauthUrl);
+      console.log('🔍 Base URL:', baseUrl);
+      window.location.href = oauthUrl;
     } catch (error) {
       console.error('Login error:', error);
       setError('Failed to initiate login. Please try again.');
