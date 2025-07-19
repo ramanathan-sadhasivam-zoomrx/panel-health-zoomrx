@@ -41,6 +41,14 @@ export default function LoginPage() {
           ? 'https://zeus-panelist-health-podb-patch-1-dev-0802230855.zoomrx.dev/auth/callback'
           : 'http://localhost:3000/auth/callback');
 
+      // Debug: Log environment variables
+      console.log('🔍 OAuth Environment Variables:', {
+        tenantId: tenantId ? 'Set' : 'Missing',
+        clientId: clientId ? 'Set' : 'Missing',
+        redirectUri,
+        hostname: typeof window !== 'undefined' ? window.location.hostname : 'server-side'
+      });
+
       if (!tenantId || !clientId) {
         setError('OAuth configuration is missing. Please check your environment variables.');
         return;
