@@ -185,13 +185,17 @@ class AuthController {
   // Microsoft OAuth callback with PKCE
   async microsoftCallback(req, res) {
     try {
-      const { code } = req.query;
+      // Handle both GET (direct callback) and POST (from frontend)
+      const code = req.query.code || req.body.code;
+      const codeVerifier = req.session?.codeVerifier || req.body.codeVerifier;
       
       console.log('OAuth callback received:', {
+        method: req.method,
         hasCode: !!code,
         codeLength: code ? code.length : 0,
         hasSession: !!req.session,
-        hasCodeVerifier: !!req.session?.codeVerifier
+        hasCodeVerifier: !!codeVerifier,
+        codeVerifierSource: req.session?.codeVerifier ? 'session' : req.body.codeVerifier ? 'body' : 'none'
       });
       
       if (!code) {
@@ -206,7 +210,6 @@ class AuthController {
       const clientId = process.env.CLIENT_ID;
       const clientSecret = process.env.CLIENT_SECRET;
       const redirectUri = process.env.REDIRECT_URI || 'http://localhost:3000/auth/callback';
-      const codeVerifier = req.session?.codeVerifier;
 
       console.log('Callback configuration:', {
         tenantId: tenantId ? 'Set' : 'Missing',
@@ -295,10 +298,9 @@ class AuthController {
 
       console.log('Authentication successful, user stored in session');
 
-      res.json({
-        success: true,
-        user: req.session.user
-      });
+      // Redirect to frontend with success
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      res.redirect(`${frontendUrl}/auth/callback?success=true&user=${encodeURIComponent(JSON.stringify(req.session.user))}`);
 
     } catch (error) {
       console.error('OAuth callback error details:', {

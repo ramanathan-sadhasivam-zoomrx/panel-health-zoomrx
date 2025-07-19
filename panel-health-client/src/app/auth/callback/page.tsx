@@ -14,7 +14,8 @@ function AuthCallbackContent() {
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        const code = searchParams.get('code');
+        const success = searchParams.get('success');
+        const userParam = searchParams.get('user');
         const error = searchParams.get('error');
         const errorDescription = searchParams.get('error_description');
 
@@ -25,61 +26,33 @@ function AuthCallbackContent() {
           return;
         }
 
-        if (!code) {
-          setStatus('error');
-          setMessage('No authorization code received');
-          return;
-        }
-
-        console.log('OAuth callback received with code');
-
-        // Get the code verifier from sessionStorage
-        const codeVerifier = sessionStorage.getItem('codeVerifier');
-        
-        if (!codeVerifier) {
-          setStatus('error');
-          setMessage('No code verifier found in session');
-          return;
-        }
-
-        // Exchange code for tokens via backend
-        const response = await fetch('/api/auth/microsoft/callback', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            code,
-            codeVerifier
-          })
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || 'Authentication failed');
-        }
-
-        if (data.success) {
+        if (success === 'true' && userParam) {
           setStatus('success');
           setMessage('Authentication successful! Redirecting...');
           
-          // Clear the code verifier from sessionStorage
-          sessionStorage.removeItem('codeVerifier');
-          
-          // Store user info in localStorage
-          localStorage.setItem('user', JSON.stringify(data.user));
-          
-          // Update auth context
-          await checkAuth();
-          
-          // Redirect to dashboard after a short delay
-          setTimeout(() => {
-            router.push('/');
-          }, 1500);
-        } else {
-          throw new Error(data.error || 'Authentication failed');
+          try {
+            const userData = JSON.parse(decodeURIComponent(userParam));
+            
+            // Store user info in localStorage
+            localStorage.setItem('user', JSON.stringify(userData));
+            
+            // Update auth context
+            await checkAuth();
+            
+            // Redirect to dashboard after a short delay
+            setTimeout(() => {
+              router.push('/');
+            }, 1500);
+          } catch (parseError) {
+            console.error('Error parsing user data:', parseError);
+            setStatus('error');
+            setMessage('Error processing authentication data');
+          }
+          return;
         }
+
+        setStatus('error');
+        setMessage('Invalid callback response');
 
       } catch (error) {
         console.error('Callback error:', error);
