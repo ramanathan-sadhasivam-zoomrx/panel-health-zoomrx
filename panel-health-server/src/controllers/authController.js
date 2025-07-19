@@ -252,15 +252,21 @@ class AuthController {
       console.log('Exchanging code for tokens...');
 
       // Exchange code for tokens with PKCE
+      const tokenParams = {
+        client_id: clientId,
+        code: code,
+        redirect_uri: redirectUri,
+        grant_type: 'authorization_code',
+        scope: 'openid profile email'
+      };
+      
+      // Add code_verifier only if available
+      if (codeVerifier) {
+        tokenParams.code_verifier = codeVerifier;
+      }
+      
       const tokenResponse = await axios.post(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, 
-        new URLSearchParams({
-          client_id: clientId,
-          code: code,
-          redirect_uri: redirectUri,
-          grant_type: 'authorization_code',
-          code_verifier: codeVerifier,
-          scope: 'openid profile email'
-        }), {
+        new URLSearchParams(tokenParams), {
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
           }
