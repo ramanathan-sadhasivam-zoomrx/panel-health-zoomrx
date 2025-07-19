@@ -3,6 +3,7 @@ import { Inter, Manrope } from "next/font/google";
 import "./globals.css";
 import RootShell from "@/components/root-shell";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 const inter = Inter({ subsets: ["latin"] });
 const manrope = Manrope({ subsets: ["latin"] });
@@ -21,7 +22,9 @@ export default function RootLayout({
     <html lang="en" className="light" suppressHydrationWarning>
       <body className={`${inter.className} ${manrope.className}`}>
         <ErrorBoundary>
-          <RootShell>{children}</RootShell>
+          <AuthProvider>
+            <RootShell>{children}</RootShell>
+          </AuthProvider>
         </ErrorBoundary>
       </body>
     </html>

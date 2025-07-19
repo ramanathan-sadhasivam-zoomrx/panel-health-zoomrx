@@ -2,10 +2,12 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
 function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { checkAuth } = useAuth();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('Processing authentication...');
 
@@ -65,8 +67,11 @@ function AuthCallbackContent() {
           // Clear the code verifier from sessionStorage
           sessionStorage.removeItem('codeVerifier');
           
-          // Store user info in localStorage or sessionStorage
+          // Store user info in localStorage
           localStorage.setItem('user', JSON.stringify(data.user));
+          
+          // Update auth context
+          await checkAuth();
           
           // Redirect to dashboard after a short delay
           setTimeout(() => {

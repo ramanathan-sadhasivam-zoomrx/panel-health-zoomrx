@@ -10,6 +10,7 @@ import { Loader2, Info } from 'lucide-react';
 import type { Survey } from '@/data/dummySurveys';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useLoading } from '@/contexts/LoadingContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface EnrichedSurvey extends Survey {
   uxScore: number;
@@ -23,6 +24,7 @@ interface EnrichedSurvey extends Survey {
 }
 
 export default function DashboardPage() {
+  const { isAuthenticated, isLoading: authLoading, login } = useAuth();
   const [filter, setFilter] = useState("top5");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -46,6 +48,37 @@ export default function DashboardPage() {
   const { setLoadingTracker } = useLoading();
 
   useEffect(() => setMounted(true), []);
+
+  // Check authentication
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      console.log('🔐 User not authenticated, redirecting to login');
+      login();
+    }
+  }, [authLoading, isAuthenticated, login]);
+
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login prompt if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600">Redirecting to login...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Fetch surveys from API
   useEffect(() => {
