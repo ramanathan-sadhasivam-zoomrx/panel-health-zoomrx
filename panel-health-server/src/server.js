@@ -1,9 +1,11 @@
 const express = require('express');
 const cors = require('cors');
+const session = require('express-session');
 const path = require('path');
 require('dotenv').config();
 
 // Import routes
+const authRoutes = require('./routes/auth');
 const npsRoutes = require('./routes/nps');
 const surveyRoutes = require('./routes/surveys');
 
@@ -13,6 +15,19 @@ const PORT = process.env.PORT || 3003;
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Session middleware
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-session-secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging', // Enable for HTTPS in staging/production
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: 'lax' // Add sameSite for better security
+  }
+}));
 
 // CORS configuration - Simple and reliable
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
@@ -36,6 +51,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // API Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/nps', npsRoutes);
 app.use('/api/surveys', surveyRoutes);
 
