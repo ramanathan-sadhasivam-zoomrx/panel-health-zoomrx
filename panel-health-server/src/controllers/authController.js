@@ -267,6 +267,7 @@ class AuthController {
       // Exchange code for tokens with PKCE
       const tokenParams = {
         client_id: clientId,
+        client_secret: clientSecret,
         code: code,
         redirect_uri: redirectUri,
         grant_type: 'authorization_code',
