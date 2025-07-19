@@ -200,17 +200,30 @@ class AuthController {
   // Microsoft OAuth callback with PKCE
   async microsoftCallback(req, res) {
     try {
+      console.log('🔄 Backend OAuth callback received');
+      console.log('🔍 Request details:', {
+        method: req.method,
+        url: req.url,
+        headers: {
+          'content-type': req.headers['content-type'],
+          'user-agent': req.headers['user-agent']?.substring(0, 50) + '...'
+        }
+      });
+      
       // Handle both GET (direct callback) and POST (from frontend)
       const code = req.query.code || req.body.code;
       const codeVerifier = req.session?.codeVerifier || req.body.codeVerifier;
       
-      console.log('OAuth callback received:', {
-        method: req.method,
+      console.log('🔍 OAuth callback data:', {
         hasCode: !!code,
         codeLength: code ? code.length : 0,
         hasSession: !!req.session,
+        sessionId: req.sessionID,
         hasCodeVerifier: !!codeVerifier,
-        codeVerifierSource: req.session?.codeVerifier ? 'session' : req.body.codeVerifier ? 'body' : 'none'
+        codeVerifierSource: req.session?.codeVerifier ? 'session' : req.body.codeVerifier ? 'body' : 'none',
+        sessionKeys: req.session ? Object.keys(req.session) : 'no session',
+        bodyKeys: req.body ? Object.keys(req.body) : 'no body',
+        queryKeys: req.query ? Object.keys(req.query) : 'no query'
       });
       
       if (!code) {

@@ -14,77 +14,120 @@ function AuthCallbackContent() {
   useEffect(() => {
     const handleCallback = async () => {
       try {
+        console.log('🔄 OAuth Callback Started');
+        console.log('🔍 URL Search Params:', {
+          code: searchParams.get('code') ? 'Present' : 'Missing',
+          error: searchParams.get('error'),
+          errorDescription: searchParams.get('error_description'),
+          state: searchParams.get('state'),
+          sessionState: searchParams.get('session_state')
+        });
+        
         const code = searchParams.get('code');
         const error = searchParams.get('error');
         const errorDescription = searchParams.get('error_description');
 
         if (error) {
-          console.error('OAuth error:', error, errorDescription);
+          console.error('❌ OAuth error:', error, errorDescription);
           setStatus('error');
           setMessage(`Authentication failed: ${errorDescription || error}`);
           return;
         }
 
         if (!code) {
+          console.error('❌ No authorization code received');
           setStatus('error');
           setMessage('No authorization code received');
           return;
         }
 
-        console.log('OAuth callback received with code');
+        console.log('✅ OAuth callback received with code');
 
         // Get the code verifier from sessionStorage
         const codeVerifier = sessionStorage.getItem('codeVerifier');
         
-        console.log('🔍 Callback Debug:', {
-          hasCode: !!code,
+        console.log('🔍 SessionStorage Debug:', {
           hasCodeVerifier: !!codeVerifier,
           codeVerifierLength: codeVerifier ? codeVerifier.length : 0,
-          apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL
+          sessionStorageKeys: Object.keys(sessionStorage),
+          sessionStorageLength: sessionStorage.length
+        });
+        
+        console.log('🔍 API Configuration:', {
+          apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
+          hasApiBaseUrl: !!process.env.NEXT_PUBLIC_API_BASE_URL
         });
         
         if (!codeVerifier) {
+          console.error('❌ No code verifier found in sessionStorage');
           setStatus('error');
           setMessage('No code verifier found in session');
           return;
         }
 
+        console.log('📡 Making API call to backend...');
+        
+        const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/microsoft/callback`;
+        const requestBody = {
+          code,
+          codeVerifier
+        };
+        
+        console.log('🔍 API Request Details:', {
+          url: apiUrl,
+          method: 'POST',
+          hasCode: !!code,
+          hasCodeVerifier: !!codeVerifier,
+          requestBodyKeys: Object.keys(requestBody)
+        });
+        
         // Exchange code for tokens via backend
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/microsoft/callback`, {
+        const response = await fetch(apiUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            code,
-            codeVerifier
-          })
+          body: JSON.stringify(requestBody)
+        });
+
+        console.log('📡 API Response received:', {
+          status: response.status,
+          statusText: response.statusText,
+          ok: response.ok
         });
 
         const data = await response.json();
+        console.log('📡 API Response data:', data);
 
         if (!response.ok) {
+          console.error('❌ API call failed:', data);
           throw new Error(data.error || 'Authentication failed');
         }
 
         if (data.success) {
+          console.log('✅ Authentication successful!');
           setStatus('success');
           setMessage('Authentication successful! Redirecting...');
           
           // Clear the code verifier from sessionStorage
           sessionStorage.removeItem('codeVerifier');
+          console.log('🧹 Code verifier cleared from sessionStorage');
           
           // Store user info in localStorage
           localStorage.setItem('user', JSON.stringify(data.user));
+          console.log('💾 User data stored in localStorage');
           
           // Update auth context
           await checkAuth();
+          console.log('🔄 Auth context updated');
           
           // Redirect to dashboard after a short delay
           setTimeout(() => {
+            console.log('🚀 Redirecting to dashboard...');
             router.push('/');
           }, 1500);
         } else {
+          console.error('❌ Authentication failed:', data);
           throw new Error(data.error || 'Authentication failed');
         }
 
