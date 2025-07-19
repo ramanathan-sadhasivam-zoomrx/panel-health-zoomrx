@@ -54,16 +54,25 @@ export default function LoginPage() {
         return;
       }
 
-      // Use backend OAuth flow instead of frontend PKCE
-      console.log('Initiating backend OAuth flow...');
+      // Generate PKCE values
+      const { codeVerifier, codeChallenge } = await generatePKCE();
       
-      // Get the base URL without /api suffix
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/api$/, '') || 'http://localhost:3003';
-      const oauthUrl = `${baseUrl}/api/auth/microsoft`;
+      // Store code verifier in sessionStorage
+      sessionStorage.setItem('codeVerifier', codeVerifier);
       
-      console.log('🔍 OAuth URL:', oauthUrl);
-      console.log('🔍 Base URL:', baseUrl);
-      window.location.href = oauthUrl;
+      // Build authorization URL
+      const authUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize?` +
+        `client_id=${clientId}` +
+        `&response_type=code` +
+        `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+        `&scope=openid profile email` +
+        `&code_challenge=${codeChallenge}` +
+        `&code_challenge_method=S256`;
+      
+      console.log('Redirecting to Microsoft OAuth:', authUrl);
+      
+      // Redirect to Microsoft OAuth
+      window.location.href = authUrl;
     } catch (error) {
       console.error('Login error:', error);
       setError('Failed to initiate login. Please try again.');

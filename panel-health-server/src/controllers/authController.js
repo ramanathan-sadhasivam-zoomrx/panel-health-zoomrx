@@ -209,10 +209,8 @@ class AuthController {
         hasCode: !!code,
         codeLength: code ? code.length : 0,
         hasSession: !!req.session,
-        sessionId: req.sessionID,
         hasCodeVerifier: !!codeVerifier,
-        codeVerifierSource: req.session?.codeVerifier ? 'session' : req.body.codeVerifier ? 'body' : 'none',
-        sessionKeys: req.session ? Object.keys(req.session) : 'no session'
+        codeVerifierSource: req.session?.codeVerifier ? 'session' : req.body.codeVerifier ? 'body' : 'none'
       });
       
       if (!code) {
@@ -235,16 +233,12 @@ class AuthController {
         hasCodeVerifier: !!codeVerifier
       });
 
-      // For direct OAuth flow (not from frontend), we need to handle missing code verifier
       if (!codeVerifier) {
-        console.error('No code verifier found - this might be a direct OAuth callback');
-        
-        // If this is a direct OAuth callback (not from our frontend), we need to handle it differently
-        // For now, let's try to proceed without PKCE (less secure but functional)
-        console.log('Proceeding without PKCE verification...');
-        
-        // Note: This is less secure but will work for testing
-        // In production, you should always use PKCE
+        console.error('No code verifier found in session');
+        return res.status(400).json({
+          success: false,
+          error: 'No code verifier found in session'
+        });
       }
 
       if (!tenantId || !clientId) {
@@ -257,22 +251,16 @@ class AuthController {
 
       console.log('Exchanging code for tokens...');
 
-      // Exchange code for tokens (with or without PKCE)
-      const tokenParams = {
-        client_id: clientId,
-        code: code,
-        redirect_uri: redirectUri,
-        grant_type: 'authorization_code',
-        scope: 'openid profile email'
-      };
-      
-      // Add code_verifier only if available
-      if (codeVerifier) {
-        tokenParams.code_verifier = codeVerifier;
-      }
-      
+      // Exchange code for tokens with PKCE
       const tokenResponse = await axios.post(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, 
-        new URLSearchParams(tokenParams), {
+        new URLSearchParams({
+          client_id: clientId,
+          code: code,
+          redirect_uri: redirectUri,
+          grant_type: 'authorization_code',
+          code_verifier: codeVerifier,
+          scope: 'openid profile email'
+        }), {
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
           }
@@ -325,9 +313,10 @@ class AuthController {
 
       console.log('Authentication successful, user stored in session');
 
-      // Redirect to frontend with success
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-      res.redirect(`${frontendUrl}/auth/callback?success=true&user=${encodeURIComponent(JSON.stringify(req.session.user))}`);
+      res.json({
+        success: true,
+        user: req.session.user
+      });
 
     } catch (error) {
       console.error('OAuth callback error details:', {
