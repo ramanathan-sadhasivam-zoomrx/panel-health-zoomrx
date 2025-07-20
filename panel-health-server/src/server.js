@@ -4,6 +4,24 @@ const session = require('express-session');
 const path = require('path');
 require('dotenv').config();
 
+// For production session storage
+let sessionStore;
+if (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging') {
+  // Use database session store for production
+  const MySQLStore = require('express-mysql-session')(session);
+  sessionStore = new MySQLStore({
+    host: process.env.DB_HOST || 'localhost',
+    port: process.env.DB_PORT || 3306,
+    user: process.env.DB_USERNAME || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'zoomrx_nps',
+    createDatabaseTable: true
+  });
+  console.log('🔧 Using MySQL session store for production');
+} else {
+  console.log('🔧 Using MemoryStore for development');
+}
+
 // Import routes
 const authRoutes = require('./routes/auth');
 const npsRoutes = require('./routes/nps');
@@ -21,6 +39,7 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'your-session-secret',
   resave: true, // Changed to true for better session persistence
   saveUninitialized: true, // Changed to true to ensure session is created
+  store: sessionStore, // Use MySQL store in production
   cookie: {
     secure: process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging', // Enable for HTTPS in staging/production
     httpOnly: true,

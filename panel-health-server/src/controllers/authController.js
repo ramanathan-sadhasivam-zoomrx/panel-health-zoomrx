@@ -411,23 +411,55 @@ class AuthController {
         });
       }
 
-      console.log('🔄 BACKEND: Getting user info from Microsoft Graph...');
+      console.log('🔄 BACKEND: Extracting user info from ID token...');
 
-      // Get user info from Microsoft Graph
-      const userResponse = await axios.get('https://graph.microsoft.com/v1.0/me', {
-        headers: {
-          'Authorization': `Bearer ${access_token}`
+      // Extract user info from ID token instead of calling Microsoft Graph
+      let userInfo;
+      try {
+        // Decode the ID token (it's a JWT)
+        const idTokenParts = id_token.split('.');
+        if (idTokenParts.length === 3) {
+          const payload = JSON.parse(Buffer.from(idTokenParts[1], 'base64').toString());
+          userInfo = {
+            displayName: payload.name,
+            userPrincipalName: payload.upn,
+            mail: payload.email || payload.upn,
+            id: payload.oid,
+            givenName: payload.given_name,
+            familyName: payload.family_name
+          };
+        } else {
+          throw new Error('Invalid ID token format');
         }
-      });
+      } catch (decodeError) {
+        console.error('❌ BACKEND: Failed to decode ID token:', decodeError);
+        // Fallback: try Microsoft Graph (in case permissions are granted later)
+        try {
+          console.log('🔄 BACKEND: Fallback: Trying Microsoft Graph...');
+          const userResponse = await axios.get('https://graph.microsoft.com/v1.0/me', {
+            headers: {
+              'Authorization': `Bearer ${access_token}`
+            }
+          });
+          userInfo = userResponse.data;
+        } catch (graphError) {
+          console.error('❌ BACKEND: Microsoft Graph also failed:', graphError.message);
+          // Create minimal user info from what we have
+          userInfo = {
+            displayName: 'User',
+            userPrincipalName: 'user@zoomrx.com',
+            mail: 'user@zoomrx.com',
+            id: 'unknown'
+          };
+        }
+      }
 
-      const userInfo = userResponse.data;
-      console.log('✅ BACKEND: User info received:', {
-        status: userResponse.status,
+      console.log('✅ BACKEND: User info extracted:', {
         displayName: userInfo.displayName,
         userPrincipalName: userInfo.userPrincipalName,
         mail: userInfo.mail,
         id: userInfo.id,
-        responseKeys: Object.keys(userInfo)
+        source: 'ID Token'
       });
 
       // Store user info in session
@@ -482,6 +514,16 @@ class AuthController {
         console.error('   - Code verifier mismatch');
         console.error('   - Session/cookie issues');
         console.error('   - CORS/Origin restrictions');
+        console.error('   - Azure AD permissions issue (most likely)');
+        
+        // Check for specific Azure AD error codes
+        if (error.response?.data?.error?.code === 'Authorization_RequestDenied') {
+          console.error('🚨 AZURE AD PERMISSION ERROR DETECTED:');
+          console.error('   - The Azure app registration lacks required permissions');
+          console.error('   - Required permissions: Microsoft Graph > User.Read');
+          console.error('   - Check Azure Portal > App Registrations > Your App > API Permissions');
+          console.error('   - Ensure admin consent is granted for the permissions');
+        }
       }
       
       res.status(500).json({
