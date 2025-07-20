@@ -34,6 +34,21 @@ const PORT = process.env.PORT || 3003;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Global request logging - log ALL requests including OPTIONS
+app.use((req, res, next) => {
+  console.log('🌐 INCOMING REQUEST:', {
+    method: req.method,
+    url: req.url,
+    origin: req.headers.origin || 'no-origin',
+    userAgent: req.headers['user-agent']?.substring(0, 50) + '...',
+    contentType: req.headers['content-type'],
+    accessControlRequestMethod: req.headers['access-control-request-method'],
+    accessControlRequestHeaders: req.headers['access-control-request-headers'],
+    timestamp: new Date().toISOString()
+  });
+  next();
+});
+
 // Request logging middleware
 app.use((req, res, next) => {
   console.log('📨 REQUEST:', {
@@ -87,7 +102,10 @@ console.log('🔧 CORS Configuration:', {
 const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
+    if (!origin) {
+      console.log('✅ CORS: Allowing request with no origin');
+      return callback(null, true);
+    }
     
     if (allAllowedOrigins.indexOf(origin) !== -1) {
       console.log('✅ CORS allowing origin:', origin);
@@ -106,10 +124,7 @@ const corsOptions = {
   maxAge: 86400 // Cache preflight for 24 hours
 };
 
-// Apply CORS to all routes
-app.use(cors(corsOptions));
-
-// Handle preflight OPTIONS requests explicitly
+// Handle preflight OPTIONS requests explicitly BEFORE CORS middleware
 app.options('*', (req, res) => {
   console.log('🔄 OPTIONS preflight request:', {
     origin: req.headers.origin,
@@ -117,13 +132,24 @@ app.options('*', (req, res) => {
     headers: req.headers['access-control-request-headers']
   });
   
-  res.header('Access-Control-Allow-Origin', req.headers.origin);
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Max-Age', '86400');
-  res.status(204).end();
+  // Check if origin is allowed
+  const origin = req.headers.origin;
+  if (!origin || allAllowedOrigins.indexOf(origin) !== -1) {
+    console.log('✅ OPTIONS: Allowing origin:', origin);
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Max-Age', '86400');
+    res.status(204).end();
+  } else {
+    console.log('🚫 OPTIONS: Blocking origin:', origin);
+    res.status(403).end();
+  }
 });
+
+// Apply CORS to all routes AFTER OPTIONS handler
+app.use(cors(corsOptions));
 
 // API Routes
 app.use('/api/auth', authRoutes);
