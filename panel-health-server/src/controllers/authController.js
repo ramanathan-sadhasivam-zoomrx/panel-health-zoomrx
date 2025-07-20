@@ -128,13 +128,27 @@ class AuthController {
   // Microsoft OAuth login redirect with PKCE
   async microsoftLogin(req, res) {
     try {
+      console.log('🚀 BACKEND: Microsoft OAuth login initiated');
+      console.log('🔍 BACKEND: Request details:', {
+        method: req.method,
+        url: req.url,
+        headers: {
+          'user-agent': req.headers['user-agent']?.substring(0, 100) + '...',
+          'origin': req.headers['origin'],
+          'referer': req.headers['referer'],
+          'host': req.headers['host']
+        },
+        sessionId: req.sessionID,
+        hasSession: !!req.session
+      });
+
       const tenantId = process.env.TENANT_ID;
       const clientId = process.env.CLIENT_ID;
       const redirectUri = process.env.REDIRECT_URI || 'http://localhost:3000/auth/callback';
       
       // Validate required environment variables
       if (!tenantId) {
-        console.error('Missing TENANT_ID environment variable');
+        console.error('❌ BACKEND: Missing TENANT_ID environment variable');
         return res.status(500).json({
           success: false,
           error: 'Missing TENANT_ID configuration'
@@ -142,31 +156,44 @@ class AuthController {
       }
       
       if (!clientId) {
-        console.error('Missing CLIENT_ID environment variable');
+        console.error('❌ BACKEND: Missing CLIENT_ID environment variable');
         return res.status(500).json({
           success: false,
           error: 'Missing CLIENT_ID configuration'
         });
       }
       
-      console.log('OAuth Configuration:', {
+      console.log('🔧 BACKEND: OAuth Configuration:', {
         tenantId: tenantId ? 'Set' : 'Missing',
         clientId: clientId ? 'Set' : 'Missing',
-        redirectUri
+        redirectUri,
+        nodeEnv: process.env.NODE_ENV,
+        sessionSecret: process.env.SESSION_SECRET ? 'Set' : 'Missing'
       });
       
       // Generate PKCE values
       const codeVerifier = crypto.randomBytes(32).toString('base64url');
       const codeChallenge = crypto.createHash('sha256').update(codeVerifier).digest('base64url');
       
+      console.log('🔐 BACKEND: PKCE values generated:', {
+        codeVerifierLength: codeVerifier.length,
+        codeChallengeLength: codeChallenge.length,
+        codeVerifierStart: codeVerifier.substring(0, 10) + '...',
+        codeChallengeStart: codeChallenge.substring(0, 10) + '...'
+      });
+      
       // Store code verifier in session for later use
       req.session.codeVerifier = codeVerifier;
       
-      console.log('🔐 PKCE generated and stored in session:', {
+      console.log('💾 BACKEND: Code verifier stored in session:', {
         hasCodeVerifier: !!codeVerifier,
         codeVerifierLength: codeVerifier.length,
         sessionId: req.sessionID,
-        sessionKeys: Object.keys(req.session || {})
+        sessionKeys: Object.keys(req.session || {}),
+        sessionData: {
+          hasCodeVerifier: !!req.session.codeVerifier,
+          codeVerifierLength: req.session.codeVerifier ? req.session.codeVerifier.length : 0
+        }
       });
       
       // Use PKCE for security (recommended)
@@ -185,11 +212,27 @@ class AuthController {
       //   `&redirect_uri=${encodeURIComponent(redirectUri)}` +
       //   `&scope=openid profile email`;
       
-      console.log('Generated auth URL:', authUrl);
+      console.log('🌐 BACKEND: Generated auth URL:', {
+        fullUrl: authUrl,
+        baseUrl: `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize`,
+        params: {
+          client_id: clientId,
+          response_type: 'code',
+          redirect_uri: redirectUri,
+          scope: 'openid profile email',
+          code_challenge: codeChallenge.substring(0, 20) + '...',
+          code_challenge_method: 'S256'
+        }
+      });
       
+      console.log('🚀 BACKEND: Redirecting to Microsoft OAuth...');
       res.redirect(authUrl);
     } catch (error) {
-      console.error('Microsoft login error details:', error);
+      console.error('❌ BACKEND: Microsoft login error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
       res.status(500).json({
         success: false,
         error: 'Failed to initiate Microsoft login: ' + error.message
@@ -200,34 +243,57 @@ class AuthController {
   // Microsoft OAuth callback with PKCE
   async microsoftCallback(req, res) {
     try {
-      console.log('🔄 Backend OAuth callback received');
-      console.log('🔍 Request details:', {
+      console.log('🔄 BACKEND: OAuth callback received');
+      console.log('🔍 BACKEND: Request details:', {
         method: req.method,
         url: req.url,
+        fullUrl: req.protocol + '://' + req.get('host') + req.originalUrl,
         headers: {
           'content-type': req.headers['content-type'],
-          'user-agent': req.headers['user-agent']?.substring(0, 50) + '...'
-        }
+          'user-agent': req.headers['user-agent']?.substring(0, 100) + '...',
+          'origin': req.headers['origin'],
+          'referer': req.headers['referer'],
+          'host': req.headers['host'],
+          'cookie': req.headers['cookie'] ? 'Present' : 'Missing'
+        },
+        sessionId: req.sessionID,
+        hasSession: !!req.session,
+        sessionKeys: req.session ? Object.keys(req.session) : 'no session'
       });
       
       // Handle both GET (direct callback) and POST (from frontend)
       const code = req.query.code || req.body.code;
       const codeVerifier = req.session?.codeVerifier || req.body.codeVerifier;
       
-      console.log('🔍 OAuth callback data:', {
+      console.log('🔍 BACKEND: OAuth callback data:', {
         hasCode: !!code,
         codeLength: code ? code.length : 0,
+        codeStart: code ? code.substring(0, 20) + '...' : 'none',
         hasSession: !!req.session,
         sessionId: req.sessionID,
         hasCodeVerifier: !!codeVerifier,
         codeVerifierSource: req.session?.codeVerifier ? 'session' : req.body.codeVerifier ? 'body' : 'none',
+        codeVerifierLength: codeVerifier ? codeVerifier.length : 0,
+        codeVerifierStart: codeVerifier ? codeVerifier.substring(0, 20) + '...' : 'none',
         sessionKeys: req.session ? Object.keys(req.session) : 'no session',
         bodyKeys: req.body ? Object.keys(req.body) : 'no body',
-        queryKeys: req.query ? Object.keys(req.query) : 'no query'
+        queryKeys: req.query ? Object.keys(req.query) : 'no query',
+        sessionData: req.session ? {
+          hasCodeVerifier: !!req.session.codeVerifier,
+          codeVerifierLength: req.session.codeVerifier ? req.session.codeVerifier.length : 0
+        } : 'no session'
       });
       
       if (!code) {
-        console.error('No authorization code received in callback');
+        console.error('❌ BACKEND: No authorization code received in callback');
+        console.error('🔍 BACKEND: Debug info:', {
+          query: req.query,
+          body: req.body,
+          hasQuery: !!req.query,
+          hasBody: !!req.body,
+          queryKeys: req.query ? Object.keys(req.query) : 'no query',
+          bodyKeys: req.body ? Object.keys(req.body) : 'no body'
+        });
         return res.status(400).json({ 
           success: false,
           error: 'No authorization code received' 
@@ -239,30 +305,50 @@ class AuthController {
       const clientSecret = process.env.CLIENT_SECRET;
       const redirectUri = process.env.REDIRECT_URI || 'http://localhost:3000/auth/callback';
 
-      console.log('Callback configuration:', {
+      console.log('🔧 BACKEND: Callback configuration:', {
         tenantId: tenantId ? 'Set' : 'Missing',
         clientId: clientId ? 'Set' : 'Missing',
+        clientSecret: clientSecret ? 'Set' : 'Missing',
         redirectUri,
-        hasCodeVerifier: !!codeVerifier
+        hasCodeVerifier: !!codeVerifier,
+        nodeEnv: process.env.NODE_ENV
       });
 
       if (!codeVerifier) {
-        console.error('No code verifier found in session');
+        console.error('❌ BACKEND: No code verifier found in session or request body');
+        console.error('🔍 BACKEND: Session debug:', {
+          hasSession: !!req.session,
+          sessionId: req.sessionID,
+          sessionKeys: req.session ? Object.keys(req.session) : 'no session',
+          bodyKeys: req.body ? Object.keys(req.body) : 'no body',
+          sessionData: req.session ? {
+            hasCodeVerifier: !!req.session.codeVerifier,
+            codeVerifierLength: req.session.codeVerifier ? req.session.codeVerifier.length : 0,
+            allKeys: Object.keys(req.session)
+          } : 'no session',
+          cookies: req.headers.cookie ? 'Present' : 'Missing'
+        });
         return res.status(400).json({
           success: false,
-          error: 'No code verifier found in session'
+          error: 'No code verifier found in session or request body'
         });
       }
 
       if (!tenantId || !clientId) {
-        console.error('Missing required OAuth configuration');
+        console.error('❌ BACKEND: Missing required OAuth configuration');
+        console.error('🔍 BACKEND: Environment check:', {
+          tenantId: tenantId ? 'Set' : 'Missing',
+          clientId: clientId ? 'Set' : 'Missing',
+          clientSecret: clientSecret ? 'Set' : 'Missing',
+          redirectUri: redirectUri || 'Not set'
+        });
         return res.status(500).json({
           success: false,
           error: 'Missing OAuth configuration'
         });
       }
 
-      console.log('Exchanging code for tokens...');
+      console.log('🔄 BACKEND: Exchanging code for tokens...');
 
       // Exchange code for tokens with PKCE
       const tokenParams = {
@@ -279,6 +365,23 @@ class AuthController {
         tokenParams.code_verifier = codeVerifier;
       }
       
+      console.log('📡 BACKEND: Token exchange request:', {
+        url: `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`,
+        method: 'POST',
+        params: {
+          client_id: clientId,
+          client_secret: clientSecret ? 'Set' : 'Missing',
+          code: code.substring(0, 20) + '...',
+          redirect_uri: redirectUri,
+          grant_type: 'authorization_code',
+          scope: 'openid profile email',
+          code_verifier: codeVerifier ? codeVerifier.substring(0, 20) + '...' : 'Not provided'
+        },
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      });
+      
       const tokenResponse = await axios.post(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, 
         new URLSearchParams(tokenParams), {
           headers: {
@@ -287,23 +390,28 @@ class AuthController {
         }
       );
 
-      console.log('Token response received:', {
+      console.log('✅ BACKEND: Token response received:', {
+        status: tokenResponse.status,
+        statusText: tokenResponse.statusText,
         hasAccessToken: !!tokenResponse.data.access_token,
         hasIdToken: !!tokenResponse.data.id_token,
-        tokenType: tokenResponse.data.token_type
+        tokenType: tokenResponse.data.token_type,
+        expiresIn: tokenResponse.data.expires_in,
+        responseKeys: Object.keys(tokenResponse.data)
       });
 
       const { access_token, id_token } = tokenResponse.data;
 
       if (!access_token) {
-        console.error('No access token received from Microsoft');
+        console.error('❌ BACKEND: No access token received from Microsoft');
+        console.error('🔍 BACKEND: Token response data:', tokenResponse.data);
         return res.status(400).json({ 
           success: false,
           error: 'No access token received' 
         });
       }
 
-      console.log('Getting user info from Microsoft Graph...');
+      console.log('🔄 BACKEND: Getting user info from Microsoft Graph...');
 
       // Get user info from Microsoft Graph
       const userResponse = await axios.get('https://graph.microsoft.com/v1.0/me', {
@@ -313,10 +421,13 @@ class AuthController {
       });
 
       const userInfo = userResponse.data;
-      console.log('User info received:', {
+      console.log('✅ BACKEND: User info received:', {
+        status: userResponse.status,
         displayName: userInfo.displayName,
         userPrincipalName: userInfo.userPrincipalName,
-        mail: userInfo.mail
+        mail: userInfo.mail,
+        id: userInfo.id,
+        responseKeys: Object.keys(userInfo)
       });
 
       // Store user info in session
@@ -331,7 +442,19 @@ class AuthController {
       // Clear the code verifier from session
       delete req.session.codeVerifier;
 
-      console.log('Authentication successful, user stored in session');
+      console.log('✅ BACKEND: Authentication successful, user stored in session');
+      console.log('💾 BACKEND: Session data after auth:', {
+        sessionId: req.sessionID,
+        hasUser: !!req.session.user,
+        userData: req.session.user ? {
+          user: req.session.user.user,
+          email: req.session.user.email,
+          name: req.session.user.name,
+          hasAccessToken: !!req.session.user.accessToken,
+          hasIdToken: !!req.session.user.idToken
+        } : 'no user',
+        sessionKeys: Object.keys(req.session)
+      });
 
       res.json({
         success: true,
@@ -343,8 +466,23 @@ class AuthController {
         message: error.message,
         response: error.response?.data,
         status: error.response?.status,
-        statusText: error.response?.statusText
+        statusText: error.response?.statusText,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers
+        }
       });
+      
+      // Log specific Microsoft OAuth errors
+      if (error.response?.status === 403) {
+        console.error('🔒 403 Forbidden - Possible causes:');
+        console.error('   - Invalid redirect URI');
+        console.error('   - Client ID/Secret mismatch');
+        console.error('   - Code verifier mismatch');
+        console.error('   - Session/cookie issues');
+        console.error('   - CORS/Origin restrictions');
+      }
       
       res.status(500).json({
         success: false,

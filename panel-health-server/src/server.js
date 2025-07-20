@@ -19,13 +19,14 @@ app.use(express.urlencoded({ extended: true }));
 // Session middleware
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-session-secret',
-  resave: false,
-  saveUninitialized: false,
+  resave: true, // Changed to true for better session persistence
+  saveUninitialized: true, // Changed to true to ensure session is created
   cookie: {
     secure: process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging', // Enable for HTTPS in staging/production
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: 'lax' // Add sameSite for better security
+    sameSite: 'lax', // Add sameSite for better security
+    domain: process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging' ? '.zoomrx.dev' : undefined // Allow subdomain sharing
   }
 }));
 
@@ -101,9 +102,42 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+// OAuth configuration test endpoint
+app.get('/api/auth/config-test', (req, res) => {
+  res.json({
+    success: true,
+    config: {
+      tenantId: process.env.TENANT_ID ? 'Set' : 'Missing',
+      clientId: process.env.CLIENT_ID ? 'Set' : 'Missing',
+      redirectUri: process.env.REDIRECT_URI || 'Not set',
+      nodeEnv: process.env.NODE_ENV,
+      sessionSecret: process.env.SESSION_SECRET ? 'Set' : 'Missing',
+      allowedOrigins: process.env.ALLOWED_ORIGINS || 'Default'
+    },
+    session: {
+      hasSession: !!req.session,
+      sessionId: req.sessionID,
+      sessionKeys: req.session ? Object.keys(req.session) : 'no session'
+    }
+  });
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error('Server error:', err);
+  console.error('❌ SERVER: Unhandled error:', {
+    message: err.message,
+    stack: err.stack,
+    name: err.name,
+    url: req.url,
+    method: req.method,
+    headers: {
+      'user-agent': req.headers['user-agent']?.substring(0, 100) + '...',
+      'origin': req.headers['origin'],
+      'referer': req.headers['referer']
+    },
+    sessionId: req.sessionID,
+    hasSession: !!req.session
+  });
   res.status(500).json({ error: 'Internal server error' });
 });
 

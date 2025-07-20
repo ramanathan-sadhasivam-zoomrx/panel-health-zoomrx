@@ -70,7 +70,7 @@ function AuthCallbackContent() {
           return;
         }
 
-        console.log('📡 Making API call to backend...');
+        console.log('📡 FRONTEND: Making API call to backend...');
         
         // Fix double /api issue by normalizing the URL
         const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/api$/, '') || 'http://localhost:3003';
@@ -80,12 +80,18 @@ function AuthCallbackContent() {
           codeVerifier
         };
         
-        console.log('🔍 API Request Details:', {
+        console.log('🔍 FRONTEND: API Request Details:', {
           url: apiUrl,
           method: 'POST',
           hasCode: !!code,
+          codeLength: code ? code.length : 0,
+          codeStart: code ? code.substring(0, 20) + '...' : 'none',
           hasCodeVerifier: !!codeVerifier,
-          requestBodyKeys: Object.keys(requestBody)
+          codeVerifierLength: codeVerifier ? codeVerifier.length : 0,
+          codeVerifierStart: codeVerifier ? codeVerifier.substring(0, 20) + '...' : 'none',
+          requestBodyKeys: Object.keys(requestBody),
+          baseUrl,
+          envApiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL
         });
         
         // Exchange code for tokens via backend
@@ -97,17 +103,27 @@ function AuthCallbackContent() {
           body: JSON.stringify(requestBody)
         });
 
-        console.log('📡 API Response received:', {
+        console.log('📡 FRONTEND: API Response received:', {
           status: response.status,
           statusText: response.statusText,
-          ok: response.ok
+          ok: response.ok,
+          headers: {
+            'content-type': response.headers.get('content-type'),
+            'set-cookie': response.headers.get('set-cookie') ? 'Present' : 'Missing'
+          }
         });
 
         const data = await response.json();
-        console.log('📡 API Response data:', data);
+        console.log('📡 FRONTEND: API Response data:', data);
 
         if (!response.ok) {
-          console.error('❌ API call failed:', data);
+          console.error('❌ FRONTEND: API call failed:', data);
+          console.error('🔍 FRONTEND: Error details:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: data.error,
+            fullData: data
+          });
           throw new Error(data.error || 'Authentication failed');
         }
 
