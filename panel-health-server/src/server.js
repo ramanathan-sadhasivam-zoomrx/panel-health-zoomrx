@@ -34,6 +34,20 @@ const PORT = process.env.PORT || 3003;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Request logging middleware
+app.use((req, res, next) => {
+  console.log('📨 REQUEST:', {
+    method: req.method,
+    url: req.url,
+    origin: req.headers.origin,
+    userAgent: req.headers['user-agent']?.substring(0, 50) + '...',
+    contentType: req.headers['content-type'],
+    hasBody: !!req.body,
+    bodyKeys: req.body ? Object.keys(req.body) : 'no body'
+  });
+  next();
+});
+
 // Session middleware
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-session-secret',
@@ -61,14 +75,34 @@ const allAllowedOrigins = [
   'https://zeus-panelist-health-podb-patch-1-dev-0802230855.zoomrx.com'
 ];
 
+console.log('🔧 CORS Configuration:', {
+  allowedOrigins: allAllowedOrigins,
+  nodeEnv: process.env.NODE_ENV
+});
+
 const corsOptions = {
-  origin: allAllowedOrigins,
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allAllowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log('🚫 CORS blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 };
 
 app.use(cors(corsOptions));
+
+// Handle preflight OPTIONS requests
+app.options('*', cors(corsOptions));
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -138,6 +172,16 @@ app.get('/api/auth/config-test', (req, res) => {
       sessionId: req.sessionID,
       sessionKeys: req.session ? Object.keys(req.session) : 'no session'
     }
+  });
+});
+
+// CORS test endpoint
+app.get('/api/cors-test', (req, res) => {
+  res.json({
+    success: true,
+    message: 'CORS is working!',
+    origin: req.headers.origin,
+    timestamp: new Date().toISOString()
   });
 });
 
