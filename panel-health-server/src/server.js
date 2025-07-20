@@ -43,7 +43,11 @@ app.use((req, res, next) => {
     userAgent: req.headers['user-agent']?.substring(0, 50) + '...',
     contentType: req.headers['content-type'],
     hasBody: !!req.body,
-    bodyKeys: req.body ? Object.keys(req.body) : 'no body'
+    bodyKeys: req.body ? Object.keys(req.body) : 'no body',
+    headers: {
+      'access-control-request-method': req.headers['access-control-request-method'],
+      'access-control-request-headers': req.headers['access-control-request-headers']
+    }
   });
   next();
 });
@@ -86,6 +90,7 @@ const corsOptions = {
     if (!origin) return callback(null, true);
     
     if (allAllowedOrigins.indexOf(origin) !== -1) {
+      console.log('✅ CORS allowing origin:', origin);
       callback(null, true);
     } else {
       console.log('🚫 CORS blocked origin:', origin);
@@ -94,15 +99,31 @@ const corsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  exposedHeaders: ['Content-Type', 'Authorization'],
   preflightContinue: false,
-  optionsSuccessStatus: 204
+  optionsSuccessStatus: 204,
+  maxAge: 86400 // Cache preflight for 24 hours
 };
 
+// Apply CORS to all routes
 app.use(cors(corsOptions));
 
-// Handle preflight OPTIONS requests
-app.options('*', cors(corsOptions));
+// Handle preflight OPTIONS requests explicitly
+app.options('*', (req, res) => {
+  console.log('🔄 OPTIONS preflight request:', {
+    origin: req.headers.origin,
+    method: req.headers['access-control-request-method'],
+    headers: req.headers['access-control-request-headers']
+  });
+  
+  res.header('Access-Control-Allow-Origin', req.headers.origin);
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Max-Age', '86400');
+  res.status(204).end();
+});
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -181,6 +202,35 @@ app.get('/api/cors-test', (req, res) => {
     success: true,
     message: 'CORS is working!',
     origin: req.headers.origin,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// CORS POST test endpoint
+app.post('/api/cors-test', (req, res) => {
+  console.log('✅ CORS POST test endpoint hit:', {
+    origin: req.headers.origin,
+    body: req.body
+  });
+  res.json({
+    success: true,
+    message: 'CORS POST is working!',
+    origin: req.headers.origin,
+    body: req.body,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Simple OAuth callback test endpoint
+app.post('/api/auth/test-callback', (req, res) => {
+  console.log('✅ OAuth callback test endpoint hit:', {
+    origin: req.headers.origin,
+    body: req.body
+  });
+  res.json({
+    success: true,
+    message: 'OAuth callback test successful!',
+    receivedData: req.body,
     timestamp: new Date().toISOString()
   });
 });
