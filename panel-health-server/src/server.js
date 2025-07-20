@@ -124,32 +124,65 @@ const corsOptions = {
   maxAge: 86400 // Cache preflight for 24 hours
 };
 
-// Handle preflight OPTIONS requests explicitly BEFORE CORS middleware
-app.options('*', (req, res) => {
-  console.log('🔄 OPTIONS preflight request:', {
-    origin: req.headers.origin,
-    method: req.headers['access-control-request-method'],
-    headers: req.headers['access-control-request-headers']
+// Manual CORS middleware - handle everything manually
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  
+  // Log all requests
+  console.log('🔄 CORS Middleware:', {
+    method: req.method,
+    url: req.url,
+    origin: origin || 'no-origin',
+    isOptions: req.method === 'OPTIONS'
   });
   
-  // Check if origin is allowed
-  const origin = req.headers.origin;
-  if (!origin || allAllowedOrigins.indexOf(origin) !== -1) {
-    console.log('✅ OPTIONS: Allowing origin:', origin);
-    res.header('Access-Control-Allow-Origin', origin);
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Max-Age', '86400');
-    res.status(204).end();
-  } else {
-    console.log('🚫 OPTIONS: Blocking origin:', origin);
-    res.status(403).end();
+  // Handle OPTIONS preflight requests
+  if (req.method === 'OPTIONS') {
+    console.log('🔄 Handling OPTIONS preflight for:', req.url);
+    
+    // Check if origin is allowed
+    if (!origin || allAllowedOrigins.indexOf(origin) !== -1) {
+      console.log('✅ OPTIONS: Allowing origin:', origin);
+      
+      // Set all CORS headers
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
+      res.header('Access-Control-Allow-Credentials', 'true');
+      res.header('Access-Control-Max-Age', '86400');
+      
+      // End the preflight request
+      res.status(204).end();
+      return;
+    } else {
+      console.log('🚫 OPTIONS: Blocking origin:', origin);
+      res.status(403).end();
+      return;
+    }
   }
+  
+  // Handle non-OPTIONS requests
+  if (origin && allAllowedOrigins.indexOf(origin) !== -1) {
+    console.log('✅ Non-OPTIONS: Allowing origin:', origin);
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+  } else if (!origin) {
+    console.log('✅ Non-OPTIONS: No origin (allowing)');
+  } else {
+    console.log('🚫 Non-OPTIONS: Blocking origin:', origin);
+  }
+  
+  next();
 });
 
-// Apply CORS to all routes AFTER OPTIONS handler
-app.use(cors(corsOptions));
+// Simple test endpoint - no middleware
+app.get('/test', (req, res) => {
+  res.json({ 
+    message: 'Server is running!',
+    timestamp: new Date().toISOString(),
+    cors: 'This endpoint has no CORS restrictions'
+  });
+});
 
 // API Routes
 app.use('/api/auth', authRoutes);
