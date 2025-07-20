@@ -4,6 +4,7 @@ import "./globals.css";
 import RootShell from "@/components/root-shell";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { AuthProvider } from "@/contexts/AuthContext";
+import ConditionalRootShell from "@/components/ConditionalRootShell";
 
 const inter = Inter({ subsets: ["latin"] });
 const manrope = Manrope({ subsets: ["latin"] });
@@ -23,7 +24,7 @@ export default function RootLayout({
       <body className={`${inter.className} ${manrope.className}`}>
         <ErrorBoundary>
           <AuthProvider>
-            <RootShell>{children}</RootShell>
+            <ConditionalRootShell>{children}</ConditionalRootShell>
           </AuthProvider>
         </ErrorBoundary>
       </body>

@@ -26,7 +26,7 @@ interface EnrichedSurvey extends Survey {
 export default function DashboardPage() {
   const { isAuthenticated, isLoading: authLoading, login } = useAuth();
   const [filter, setFilter] = useState("top5");
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -51,14 +51,20 @@ export default function DashboardPage() {
 
   // Check authentication
   useEffect(() => {
+    // Skip authentication check in development mode
+    if (process.env.NEXT_PUBLIC_DISABLE_AUTH === 'true') {
+      console.log('🔧 Development mode: Skipping authentication check');
+      return;
+    }
+    
     if (!authLoading && !isAuthenticated) {
       console.log('🔐 User not authenticated, redirecting to login');
       login();
     }
   }, [authLoading, isAuthenticated, login]);
 
-  // Show loading while checking authentication
-  if (authLoading) {
+  // Show loading while checking authentication (skip in dev mode)
+  if (authLoading && process.env.NEXT_PUBLIC_DISABLE_AUTH !== 'true') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -69,8 +75,8 @@ export default function DashboardPage() {
     );
   }
 
-  // Show login prompt if not authenticated
-  if (!isAuthenticated) {
+  // Show login prompt if not authenticated (skip in dev mode)
+  if (!isAuthenticated && process.env.NEXT_PUBLIC_DISABLE_AUTH !== 'true') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -148,20 +154,20 @@ export default function DashboardPage() {
           const crmId1187Surveys = surveyData.filter(s => s.crmId === '1187' || s.crmId === 1187);
           console.log(`🔍 FRONTEND: Found ${crmId1187Surveys.length} surveys with CRM ID 1187:`);
           
-          crmId1187Surveys.forEach((survey, index) => {
-            console.log(`  ${index + 1}. Survey ID: ${survey.id}`);
-            console.log(`     - Title: ${survey.surveyTitle}`);
-            console.log(`     - XScore: ${survey.xscore}`);
-            console.log(`     - Legacy Score: ${survey.experienceScore}`);
-            console.log(`     - User Rating: ${survey.userRating}`);
-            console.log(`     - User Sentiment: ${survey.userSentiment}`);
-            console.log(`     - Dropoff: ${survey.dropOffPercent}%`);
-            console.log(`     - Screenout: ${survey.screenOutPercent}%`);
-            if (survey.breakdown) {
-              console.log(`     - Breakdown: Rating=${survey.breakdown.userRating?.value}, Sentiment=${survey.breakdown.userSentiment?.value}`);
-            }
-            console.log('');
-          });
+                crmId1187Surveys.forEach((survey: EnrichedSurvey, index: number) => {
+        console.log(`  ${index + 1}. Survey ID: ${survey.id}`);
+        console.log(`     - Title: ${survey.surveyTitle}`);
+        console.log(`     - XScore: ${survey.xscore}`);
+        console.log(`     - Legacy Score: ${survey.experienceScore}`);
+        console.log(`     - User Rating: ${survey.userRating}`);
+        console.log(`     - User Sentiment: ${survey.userSentiment}`);
+        console.log(`     - Dropoff: ${survey.dropOffPercent}%`);
+        console.log(`     - Screenout: ${survey.screenOutPercent}%`);
+        if (survey.breakdown) {
+          console.log(`     - Breakdown: Rating=${survey.breakdown.userRating?.value}, Sentiment=${survey.breakdown.userSentiment?.value}`);
+        }
+        console.log('');
+      });
           
           // Check first 3 surveys in API response order
           console.log('\n🔍 FRONTEND: FIRST 3 SURVEYS IN API RESPONSE ORDER:');
@@ -182,7 +188,7 @@ export default function DashboardPage() {
     };
 
     fetchSurveys();
-  }, [setLoadingTracker]);
+  }, []);
 
   const enrichedSurveys = useMemo(() => {
     console.log('🔄 FRONTEND: Processing surveys (display only - no calculations)...');
@@ -257,7 +263,7 @@ export default function DashboardPage() {
     if (valid.length === 0) {
       console.log('🚨 FRONTEND: NO VALID SURVEYS FOUND!');
       console.log('First 3 processed surveys:');
-      processedSurveys.slice(0, 3).forEach((s, i) => {
+      processedSurveys.slice(0, 3).forEach((s: EnrichedSurvey, i: number) => {
         console.log(`  Survey ${i + 1}:`, {
           id: s.id,
           uxScore: s.uxScore,
@@ -268,13 +274,13 @@ export default function DashboardPage() {
     }
     
     // Log surveys that were filtered out
-    const invalidSurveys = processedSurveys.filter(survey => 
+    const invalidSurveys = processedSurveys.filter((survey: EnrichedSurvey) => 
       typeof survey.uxScore !== 'number' || 
       isNaN(survey.uxScore)
     );
     
     if (invalidSurveys.length > 0) {
-      console.log('🚫 INVALID SURVEYS FILTERED OUT:', invalidSurveys.map(s => ({
+      console.log('🚫 INVALID SURVEYS FILTERED OUT:', invalidSurveys.map((s: EnrichedSurvey) => ({
         id: s.id,
         crmId: s.crmId,
         title: s.surveyTitle,
