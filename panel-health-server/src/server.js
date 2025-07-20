@@ -4,23 +4,8 @@ const session = require('express-session');
 const path = require('path');
 require('dotenv').config();
 
-// For production session storage
-let sessionStore;
-if (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging') {
-  // Use database session store for production
-  const MySQLStore = require('express-mysql-session')(session);
-  sessionStore = new MySQLStore({
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 3306,
-    user: process.env.DB_USERNAME || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'zoomrx_nps',
-    createDatabaseTable: true
-  });
-  console.log('🔧 Using MySQL session store for production');
-} else {
-  console.log('🔧 Using MemoryStore for development');
-}
+// Using memory store for sessions (simpler setup)
+console.log('🔧 Using MemoryStore for sessions');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -72,7 +57,7 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'your-session-secret',
   resave: true, // Changed to true for better session persistence
   saveUninitialized: true, // Changed to true to ensure session is created
-  store: sessionStore, // Use MySQL store in production
+  // Using memory store (no database dependency)
   cookie: {
     secure: process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging', // Enable for HTTPS in staging/production
     httpOnly: true,
@@ -133,7 +118,9 @@ app.use((req, res, next) => {
     method: req.method,
     url: req.url,
     origin: origin || 'no-origin',
-    isOptions: req.method === 'OPTIONS'
+    isOptions: req.method === 'OPTIONS',
+    accessControlRequestMethod: req.headers['access-control-request-method'],
+    accessControlRequestHeaders: req.headers['access-control-request-headers']
   });
   
   // Handle OPTIONS preflight requests
@@ -284,12 +271,40 @@ app.post('/api/cors-test', (req, res) => {
 app.post('/api/auth/test-callback', (req, res) => {
   console.log('✅ OAuth callback test endpoint hit:', {
     origin: req.headers.origin,
-    body: req.body
+    body: req.body,
+    method: req.method,
+    headers: {
+      'content-type': req.headers['content-type'],
+      'user-agent': req.headers['user-agent']?.substring(0, 50) + '...'
+    }
   });
   res.json({
     success: true,
     message: 'OAuth callback test successful!',
     receivedData: req.body,
+    method: req.method,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Test the actual OAuth callback endpoint
+app.post('/api/auth/microsoft/callback-test', (req, res) => {
+  console.log('✅ Microsoft OAuth callback test hit:', {
+    origin: req.headers.origin,
+    body: req.body,
+    method: req.method,
+    hasCode: !!req.body.code,
+    hasCodeVerifier: !!req.body.codeVerifier
+  });
+  res.json({
+    success: true,
+    message: 'Microsoft OAuth callback test successful!',
+    receivedData: {
+      hasCode: !!req.body.code,
+      codeLength: req.body.code ? req.body.code.length : 0,
+      hasCodeVerifier: !!req.body.codeVerifier,
+      codeVerifierLength: req.body.codeVerifier ? req.body.codeVerifier.length : 0
+    },
     timestamp: new Date().toISOString()
   });
 });
