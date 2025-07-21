@@ -63,12 +63,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const login = useCallback(() => {
+    console.log('🔐 AuthContext: login() called', { isAuthDisabled, isMounted: true });
+    
     // If auth is disabled, go directly to dashboard
     if (isAuthDisabled) {
       console.log('🔧 Development mode: Direct access to dashboard');
       router.push('/');
       return;
     }
+    
+    console.log('🔐 AuthContext: Redirecting to login page');
     router.push('/login');
   }, [isAuthDisabled, router]);
 
