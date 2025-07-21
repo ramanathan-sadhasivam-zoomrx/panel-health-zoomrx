@@ -24,6 +24,8 @@ interface EnrichedSurvey extends Survey {
 }
 
 export default function DashboardPage() {
+  console.log('🔄 DashboardPage: Component rendering');
+  
   const { isAuthenticated, isLoading: authLoading, login } = useAuth();
   const [filter, setFilter] = useState("top5");
   const [isLoading, setIsLoading] = useState(false);
@@ -47,10 +49,18 @@ export default function DashboardPage() {
   // Global loading context
   const { setLoadingTracker } = useLoading();
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    console.log('🔄 DashboardPage: Setting mounted to true');
+    setMounted(true);
+    return () => {
+      console.log('🔄 DashboardPage: Component unmounting, mounted will be false');
+    };
+  }, []);
 
   // Check authentication
   useEffect(() => {
+    console.log('🔄 DashboardPage: Authentication useEffect running', { authLoading, isAuthenticated, mounted });
+    
     // Skip authentication check in development mode
     if (process.env.NEXT_PUBLIC_DISABLE_AUTH === 'true') {
       console.log('🔧 Development mode: Skipping authentication check');
@@ -88,8 +98,13 @@ export default function DashboardPage() {
 
   // Fetch surveys from API
   useEffect(() => {
+    console.log('🔄 DashboardPage: Survey fetching useEffect running', { mounted });
+    
     // Only run if component is mounted
-    if (!mounted) return;
+    if (!mounted) {
+      console.log('🔄 DashboardPage: Survey fetching useEffect skipped - not mounted');
+      return;
+    }
     
     let timeoutId: NodeJS.Timeout | null = null;
     let controller: AbortController | null = null;
@@ -318,8 +333,13 @@ export default function DashboardPage() {
 
   // Calculate and set top 5 surveys when validSurveys changes
   useEffect(() => {
+    console.log('🔄 DashboardPage: Top 5 useEffect running', { mounted, validSurveysLength: validSurveys.length });
+    
     // Only run if component is mounted
-    if (!mounted) return;
+    if (!mounted) {
+      console.log('🔄 DashboardPage: Top 5 useEffect skipped - not mounted');
+      return;
+    }
     
     const seen = new Set();
     const unique = [];
@@ -348,8 +368,13 @@ export default function DashboardPage() {
 
   // Calculate and set lowest 5 surveys when validSurveys changes
   useEffect(() => {
+    console.log('🔄 DashboardPage: Lowest 5 useEffect running', { mounted, validSurveysLength: validSurveys.length });
+    
     // Only run if component is mounted
-    if (!mounted) return;
+    if (!mounted) {
+      console.log('🔄 DashboardPage: Lowest 5 useEffect skipped - not mounted');
+      return;
+    }
     
     const seen = new Set();
     const unique = [];

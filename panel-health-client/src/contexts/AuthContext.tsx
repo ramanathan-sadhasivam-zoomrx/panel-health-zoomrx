@@ -23,6 +23,8 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  console.log('🔄 AuthProvider: Component rendering');
+  
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
@@ -31,6 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAuthDisabled = process.env.NEXT_PUBLIC_DISABLE_AUTH === 'true';
 
   const checkAuth = async (): Promise<boolean> => {
+    console.log('🔄 AuthProvider: checkAuth called');
     try {
       // If auth is disabled, always return true (authenticated)
       if (isAuthDisabled) {
@@ -83,22 +86,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    console.log('🔄 AuthProvider: Auth useEffect running');
     let isMounted = true;
     
     const initAuth = async () => {
-      if (!isMounted) return;
+      console.log('🔄 AuthProvider: initAuth called', { isMounted });
+      if (!isMounted) {
+        console.log('🔄 AuthProvider: initAuth skipped - not mounted');
+        return;
+      }
       
+      console.log('🔄 AuthProvider: Setting loading to true');
       setIsLoading(true);
       await checkAuth();
       
       if (isMounted) {
+        console.log('🔄 AuthProvider: Setting loading to false');
         setIsLoading(false);
+      } else {
+        console.log('🔄 AuthProvider: Skipping setLoading(false) - not mounted');
       }
     };
 
     initAuth();
     
     return () => {
+      console.log('🔄 AuthProvider: Auth useEffect cleanup - setting isMounted to false');
       isMounted = false;
     };
   }, []);
