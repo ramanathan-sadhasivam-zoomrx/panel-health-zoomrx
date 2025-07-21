@@ -60,13 +60,7 @@ export default function DashboardPage() {
     };
   }, []);
 
-  // Handle authentication redirect in render logic instead of useEffect to prevent infinite re-renders
-  if (!authLoading && !isAuthenticated && process.env.NEXT_PUBLIC_DISABLE_AUTH !== 'true' && !loginAttemptedRef.current) {
-    console.log('🔐 User not authenticated, redirecting to login');
-    loginAttemptedRef.current = true;
-    login();
-    return null; // Return null to prevent rendering while redirecting
-  }
+  // Authentication check will be handled after all hooks are called
 
   // Show loading while checking authentication (skip in dev mode)
   if (authLoading && process.env.NEXT_PUBLIC_DISABLE_AUTH !== 'true') {
@@ -612,4 +606,12 @@ export default function DashboardPage() {
       </main>
     </div>
   );
+  
+  // Handle authentication redirect after all hooks are called
+  if (!authLoading && !isAuthenticated && process.env.NEXT_PUBLIC_DISABLE_AUTH !== 'true' && !loginAttemptedRef.current) {
+    console.log('🔐 User not authenticated, redirecting to login');
+    loginAttemptedRef.current = true;
+    login();
+    return null; // Return null to prevent rendering while redirecting
+  }
 }
