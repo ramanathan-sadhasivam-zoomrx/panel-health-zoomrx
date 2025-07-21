@@ -33,6 +33,7 @@ class SurveyModel {
           s.status,
           s.type as survey_type,
           recent_pw.id as recent_project_wave_id,
+          recent_pw.project_id as project_id,
           last_wave.id as last_wave_id
         FROM surveys s
         LEFT JOIN lime_surveys_languagesettings lsl ON lsl.surveyls_survey_id = s.id
