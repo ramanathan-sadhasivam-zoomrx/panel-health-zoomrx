@@ -38,6 +38,9 @@ export default function DashboardPage() {
   const [top5Surveys, setTop5Surveys] = useState<EnrichedSurvey[]>([]);
   const [lowest5Surveys, setLowest5Surveys] = useState<EnrichedSurvey[]>([]);
   
+  // Track if login has been attempted to prevent infinite re-renders
+  const loginAttemptedRef = useRef(false);
+  
   // Handle filter change with state reset
   const handleFilterChange = (newFilter: string) => {
     console.log(`🔄 FILTER CHANGING: ${filter} → ${newFilter}`);
@@ -75,9 +78,22 @@ export default function DashboardPage() {
     }
     
     // Only redirect if not loading and not authenticated
-    if (!authLoading && !isAuthenticated && isMountedRef.current) {
+    if (!authLoading && !isAuthenticated && isMountedRef.current && !loginAttemptedRef.current) {
       console.log('🔐 User not authenticated, redirecting to login');
-      login();
+      loginAttemptedRef.current = true; // Mark that we've attempted login
+      
+      // Use setTimeout to defer the login call and prevent immediate re-renders
+      const timeoutId = setTimeout(() => {
+        if (isMountedRef.current) {
+          login();
+        }
+      }, 0);
+      
+      // Cleanup function for this effect
+      return () => {
+        clearTimeout(timeoutId);
+        console.log('🔄 DashboardPage: Authentication useEffect cleanup');
+      };
     }
     
     // Cleanup function
