@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface User {
@@ -162,10 +162,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  // Memoize isAuthenticated to prevent unnecessary re-renders
+  const isAuthenticated = useMemo(() => {
+    const result = isAuthDisabled ? true : !!user;
+    console.log('🔄 AuthProvider: isAuthenticated computed:', { isAuthDisabled, hasUser: !!user, result });
+    return result;
+  }, [isAuthDisabled, user]);
+
   const value: AuthContextType = {
     user,
     isLoading,
-    isAuthenticated: isAuthDisabled ? true : !!user, // Always authenticated in dev mode
+    isAuthenticated,
     login,
     logout,
     checkAuth,
