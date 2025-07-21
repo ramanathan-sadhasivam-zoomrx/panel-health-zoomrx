@@ -34,10 +34,6 @@ export default function DashboardPage() {
   const isMountedRef = useRef(true);
   const [surveys, setSurveys] = useState<Survey[]>([]);
   
-  // Separate state for top 5 and lowest 5 to ensure complete isolation
-  const [top5Surveys, setTop5Surveys] = useState<EnrichedSurvey[]>([]);
-  const [lowest5Surveys, setLowest5Surveys] = useState<EnrichedSurvey[]>([]);
-  
   // Track if login has been attempted to prevent infinite re-renders
   const loginAttemptedRef = useRef(false);
   
@@ -381,20 +377,11 @@ export default function DashboardPage() {
     return valid;
   }, [enrichedSurveys]);
 
-  // Calculate and set top 5 surveys when validSurveys changes
-  useEffect(() => {
-    console.log('🔄 DashboardPage: Top 5 useEffect running', { 
-      isMounted: isMountedRef.current, 
-      validSurveysLength: validSurveys.length,
-      authLoading,
-      isAuthenticated
+  // Calculate top 5 surveys using useMemo to prevent unnecessary re-renders
+  const top5Surveys = useMemo(() => {
+    console.log('🔄 DashboardPage: Top 5 useMemo running', { 
+      validSurveysLength: validSurveys.length
     });
-    
-    // Only run if component is mounted
-    if (!isMountedRef.current) {
-      console.log('🔄 DashboardPage: Top 5 useEffect skipped - not mounted');
-      return;
-    }
     
     const seen = new Set();
     const unique = [];
@@ -418,25 +405,14 @@ export default function DashboardPage() {
     }
     
     console.log('🏆 TOP 5 SURVEYS CALCULATED:', unique.length);
-    if (isMountedRef.current) {
-      setTop5Surveys(unique);
-    }
+    return unique;
   }, [validSurveys]);
 
-  // Calculate and set lowest 5 surveys when validSurveys changes
-  useEffect(() => {
-    console.log('🔄 DashboardPage: Lowest 5 useEffect running', { 
-      isMounted: isMountedRef.current, 
-      validSurveysLength: validSurveys.length,
-      authLoading,
-      isAuthenticated
+  // Calculate lowest 5 surveys using useMemo to prevent unnecessary re-renders
+  const lowest5Surveys = useMemo(() => {
+    console.log('🔄 DashboardPage: Lowest 5 useMemo running', { 
+      validSurveysLength: validSurveys.length
     });
-    
-    // Only run if component is mounted
-    if (!isMountedRef.current) {
-      console.log('🔄 DashboardPage: Lowest 5 useEffect skipped - not mounted');
-      return;
-    }
     
     const seen = new Set();
     const unique = [];
@@ -460,9 +436,7 @@ export default function DashboardPage() {
     }
     
     console.log('📉 LOWEST 5 SURVEYS CALCULATED:', unique.length);
-    if (isMountedRef.current) {
-      setLowest5Surveys(unique);
-    }
+    return unique;
   }, [validSurveys]);
 
   // Select the appropriate list based on filter
