@@ -60,14 +60,16 @@ export default function DashboardPage() {
     };
   }, []);
 
-  // Authentication redirect useEffect
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated && process.env.NEXT_PUBLIC_DISABLE_AUTH !== 'true' && !loginAttemptedRef.current) {
+  // Handle authentication redirect immediately if not authenticated
+  if (!authLoading && !isAuthenticated && process.env.NEXT_PUBLIC_DISABLE_AUTH !== 'true') {
+    // Use window.location for immediate redirect to avoid React re-render issues
+    if (typeof window !== 'undefined' && !loginAttemptedRef.current) {
       console.log('🔐 User not authenticated, redirecting to login');
       loginAttemptedRef.current = true;
-      login();
+      window.location.href = '/login';
+      return null;
     }
-  }, [authLoading, isAuthenticated, login]);
+  }
 
   // Show loading while checking authentication (skip in dev mode)
   if (authLoading && process.env.NEXT_PUBLIC_DISABLE_AUTH !== 'true') {
