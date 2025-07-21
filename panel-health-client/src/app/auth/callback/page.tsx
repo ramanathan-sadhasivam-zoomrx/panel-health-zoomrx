@@ -15,8 +15,12 @@ function AuthCallbackContent() {
     const handleCallback = async () => {
       try {
         // Retrieve debug info from sessionStorage
-        const debugInfo = sessionStorage.getItem('oauthDebug');
-        console.log('🔍 Previous OAuth Debug Info:', debugInfo ? JSON.parse(debugInfo) : 'None');
+        let debugInfo = null;
+        if (typeof window !== 'undefined' && window.sessionStorage) {
+          const storedDebugInfo = sessionStorage.getItem('oauthDebug');
+          debugInfo = storedDebugInfo ? JSON.parse(storedDebugInfo) : null;
+        }
+        console.log('🔍 Previous OAuth Debug Info:', debugInfo || 'None');
         
         console.log('🔄 OAuth Callback Started');
         console.log('🔍 URL Search Params:', {
@@ -48,14 +52,19 @@ function AuthCallbackContent() {
         console.log('✅ OAuth callback received with code');
 
         // Get the code verifier from sessionStorage
-        const codeVerifier = sessionStorage.getItem('codeVerifier');
-        
-        console.log('🔍 SessionStorage Debug:', {
-          hasCodeVerifier: !!codeVerifier,
-          codeVerifierLength: codeVerifier ? codeVerifier.length : 0,
-          sessionStorageKeys: Object.keys(sessionStorage),
-          sessionStorageLength: sessionStorage.length
-        });
+        let codeVerifier = null;
+        if (typeof window !== 'undefined' && window.sessionStorage) {
+          codeVerifier = sessionStorage.getItem('codeVerifier');
+          
+          console.log('🔍 SessionStorage Debug:', {
+            hasCodeVerifier: !!codeVerifier,
+            codeVerifierLength: codeVerifier ? codeVerifier.length : 0,
+            sessionStorageKeys: Object.keys(sessionStorage),
+            sessionStorageLength: sessionStorage.length
+          });
+        } else {
+          console.log('🔍 SessionStorage not available (SSR)');
+        }
         
         console.log('🔍 API Configuration:', {
           apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
@@ -133,12 +142,16 @@ function AuthCallbackContent() {
           setMessage('Authentication successful! Redirecting...');
           
           // Clear the code verifier from sessionStorage
-          sessionStorage.removeItem('codeVerifier');
-          console.log('🧹 Code verifier cleared from sessionStorage');
+          if (typeof window !== 'undefined' && window.sessionStorage) {
+            sessionStorage.removeItem('codeVerifier');
+            console.log('🧹 Code verifier cleared from sessionStorage');
+          }
           
           // Store user info in localStorage
-          localStorage.setItem('user', JSON.stringify(data.user));
-          console.log('💾 User data stored in localStorage');
+          if (typeof window !== 'undefined' && window.localStorage) {
+            localStorage.setItem('user', JSON.stringify(data.user));
+            console.log('💾 User data stored in localStorage');
+          }
           
           // Update auth context
           await checkAuth();

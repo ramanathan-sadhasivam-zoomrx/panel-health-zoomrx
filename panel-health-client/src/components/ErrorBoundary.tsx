@@ -25,6 +25,16 @@ class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Log the error to console but don't show overlay
     console.error('Error caught by boundary:', error, errorInfo);
+    
+    // Log additional debugging information
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      componentStack: errorInfo.componentStack,
+      timestamp: new Date().toISOString(),
+      userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'server-side',
+      url: typeof window !== 'undefined' ? window.location.href : 'server-side'
+    });
   }
 
   render() {

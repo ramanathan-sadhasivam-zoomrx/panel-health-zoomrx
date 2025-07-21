@@ -4,7 +4,6 @@ import { useState } from "react";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Header } from "@/components/header";
 import { Sidebar } from "@/components/sidebar";
-import { LoadingProvider } from "@/contexts/LoadingContext";
 
 export default function RootShell({ children }: { children: React.ReactNode }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -20,22 +19,20 @@ export default function RootShell({ children }: { children: React.ReactNode }) {
       enableSystem={false}
       disableTransitionOnChange
     >
-      <LoadingProvider>
-        <Sidebar isCollapsed={isSidebarCollapsed} setIsCollapsed={setIsSidebarCollapsed} />
-        <Header isSidebarCollapsed={isSidebarCollapsed} />
-        <div
-          style={{
-            marginLeft: sidebarWidth,
-            paddingTop: headerHeight,
-            minHeight: '100vh',
-            background: 'var(--background)',
-            display: 'flex',
-            flexDirection: 'column',
-          }}
-        >
-          {children}
-        </div>
-      </LoadingProvider>
+      <Sidebar isCollapsed={isSidebarCollapsed} setIsCollapsed={setIsSidebarCollapsed} />
+      <Header isSidebarCollapsed={isSidebarCollapsed} />
+      <div
+        style={{
+          marginLeft: sidebarWidth,
+          paddingTop: headerHeight,
+          minHeight: '100vh',
+          background: 'var(--background)',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        {children}
+      </div>
     </ThemeProvider>
   );
 } 

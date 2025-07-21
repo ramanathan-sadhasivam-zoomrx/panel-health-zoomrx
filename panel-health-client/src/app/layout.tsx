@@ -4,6 +4,7 @@ import "./globals.css";
 import RootShell from "@/components/root-shell";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { LoadingProvider } from "@/contexts/LoadingContext";
 import ConditionalRootShell from "@/components/ConditionalRootShell";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -23,9 +24,11 @@ export default function RootLayout({
     <html lang="en" className="light" suppressHydrationWarning>
       <body className={`${inter.className} ${manrope.className}`}>
         <ErrorBoundary>
-          <AuthProvider>
-            <ConditionalRootShell>{children}</ConditionalRootShell>
-          </AuthProvider>
+          <LoadingProvider>
+            <AuthProvider>
+              <ConditionalRootShell>{children}</ConditionalRootShell>
+            </AuthProvider>
+          </LoadingProvider>
         </ErrorBoundary>
       </body>
     </html>

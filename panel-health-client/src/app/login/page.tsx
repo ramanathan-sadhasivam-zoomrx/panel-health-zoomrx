@@ -97,18 +97,19 @@ export default function LoginPage() {
         codeChallengeLength: codeChallenge ? codeChallenge.length : 0
       };
       
-      sessionStorage.setItem('oauthDebug', JSON.stringify(debugInfo));
-      
-      console.log('🔐 PKCE Generated:', debugInfo);
-      
-      // Store code verifier in sessionStorage
-      sessionStorage.setItem('codeVerifier', codeVerifier);
-      
-      console.log('💾 Code verifier stored in sessionStorage');
-      console.log('🔍 SessionStorage check:', {
-        storedCodeVerifier: sessionStorage.getItem('codeVerifier') ? 'Present' : 'Missing',
-        sessionStorageLength: sessionStorage.length
-      });
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        sessionStorage.setItem('oauthDebug', JSON.stringify(debugInfo));
+        console.log('🔐 PKCE Generated:', debugInfo);
+        
+        // Store code verifier in sessionStorage
+        sessionStorage.setItem('codeVerifier', codeVerifier);
+        
+        console.log('💾 Code verifier stored in sessionStorage');
+        console.log('🔍 SessionStorage check:', {
+          storedCodeVerifier: sessionStorage.getItem('codeVerifier') ? 'Present' : 'Missing',
+          sessionStorageLength: sessionStorage.length
+        });
+      }
       
       // Build authorization URL
       const authUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize?` +

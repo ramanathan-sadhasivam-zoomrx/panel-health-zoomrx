@@ -48,6 +48,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return true;
       }
 
+      // Check if localStorage is available (client-side only)
+      if (typeof window === 'undefined' || !window.localStorage) {
+        console.log('🔄 AuthProvider: localStorage not available (SSR)');
+        return false;
+      }
+
       // Check if user exists in localStorage
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
@@ -73,7 +79,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [isAuthDisabled, router]);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('user');
+    // Check if localStorage is available (client-side only)
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.removeItem('user');
+    }
     setUser(null);
     
     // If auth is disabled, stay on dashboard
@@ -96,19 +105,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
       
-      console.log('🔄 AuthProvider: Setting loading to true');
-      setIsLoading(true);
-      await checkAuth();
-      
-      if (isMounted) {
-        console.log('🔄 AuthProvider: Setting loading to false');
-        setIsLoading(false);
-      } else {
-        console.log('🔄 AuthProvider: Skipping setLoading(false) - not mounted');
+      try {
+        console.log('🔄 AuthProvider: Setting loading to true');
+        setIsLoading(true);
+        await checkAuth();
+        
+        if (isMounted) {
+          console.log('🔄 AuthProvider: Setting loading to false');
+          setIsLoading(false);
+        } else {
+          console.log('🔄 AuthProvider: Skipping setLoading(false) - not mounted');
+        }
+      } catch (error) {
+        console.error('🔄 AuthProvider: Error during authentication initialization:', error);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
-    initAuth();
+    // Use setTimeout to avoid potential React state update conflicts during initialization
+    setTimeout(() => {
+      if (isMounted) {
+        initAuth();
+      }
+    }, 0);
     
     return () => {
       console.log('🔄 AuthProvider: Auth useEffect cleanup - setting isMounted to false');
