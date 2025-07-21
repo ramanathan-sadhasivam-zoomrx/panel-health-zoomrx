@@ -100,9 +100,9 @@ export default function DashboardPage() {
       return;
     }
     
-    // Skip if authentication is still loading or not authenticated
-    if (authLoading || !isAuthenticated) {
-      console.log('🔄 DashboardPage: Survey fetching useEffect skipped - auth not ready');
+    // Skip if authentication is still loading
+    if (authLoading) {
+      console.log('🔄 DashboardPage: Survey fetching useEffect skipped - auth loading');
       return;
     }
     
@@ -231,7 +231,7 @@ export default function DashboardPage() {
         controller.abort();
       }
     };
-  }, [authLoading, isAuthenticated]); // Add auth dependencies to run when auth is stable
+  }, []); // Remove auth dependencies to prevent infinite re-renders
 
   const enrichedSurveys = useMemo(() => {
     console.log('🔄 FRONTEND: Processing surveys (display only - no calculations)...');
