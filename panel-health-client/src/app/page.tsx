@@ -60,56 +60,13 @@ export default function DashboardPage() {
     };
   }, []);
 
-  // Check authentication
-  useEffect(() => {
-    console.log('🔄 DashboardPage: Authentication useEffect running', { 
-      authLoading, 
-      isAuthenticated, 
-      isMounted: isMountedRef.current,
-      loginAttempted: loginAttemptedRef.current,
-      disableAuth: process.env.NEXT_PUBLIC_DISABLE_AUTH
-    });
-    
-    // Only run if component is mounted
-    if (!isMountedRef.current) {
-      console.log('🔄 DashboardPage: Authentication useEffect skipped - not mounted');
-      return;
-    }
-    
-    // Skip authentication check in development mode
-    if (process.env.NEXT_PUBLIC_DISABLE_AUTH === 'true') {
-      console.log('🔧 Development mode: Skipping authentication check');
-      return;
-    }
-    
-    // Only redirect if not loading and not authenticated
-    if (!authLoading && !isAuthenticated && isMountedRef.current && !loginAttemptedRef.current) {
-      console.log('🔐 User not authenticated, redirecting to login');
-      loginAttemptedRef.current = true; // Mark that we've attempted login
-      
-      // Use setTimeout to defer the login call and prevent immediate re-renders
-      const loginTimeout = setTimeout(() => {
-        console.log('⏰ DashboardPage: Login timeout executed, isMounted:', isMountedRef.current);
-        if (isMountedRef.current) {
-          console.log('🚀 DashboardPage: Calling login() function');
-          login();
-        } else {
-          console.log('❌ DashboardPage: Login skipped - component not mounted');
-        }
-      }, 0);
-      
-      // Cleanup function for this effect
-      return () => {
-        console.log('🔄 DashboardPage: Authentication useEffect cleanup (with login timeout)');
-        clearTimeout(loginTimeout);
-      };
-    }
-    
-    // Cleanup function
-    return () => {
-      console.log('🔄 DashboardPage: Authentication useEffect cleanup (no redirect)');
-    };
-  }, [authLoading, login]); // Removed isAuthenticated dependency to prevent infinite re-renders
+  // Handle authentication redirect in render logic instead of useEffect to prevent infinite re-renders
+  if (!authLoading && !isAuthenticated && process.env.NEXT_PUBLIC_DISABLE_AUTH !== 'true' && !loginAttemptedRef.current) {
+    console.log('🔐 User not authenticated, redirecting to login');
+    loginAttemptedRef.current = true;
+    login();
+    return null; // Return null to prevent rendering while redirecting
+  }
 
   // Show loading while checking authentication (skip in dev mode)
   if (authLoading && process.env.NEXT_PUBLIC_DISABLE_AUTH !== 'true') {
