@@ -86,52 +86,34 @@ export default function DashboardPage() {
       return;
     }
     
-    // Add a small delay to ensure auth state is stable
-    const authTimeout = setTimeout(() => {
-      if (!isMountedRef.current) {
-        console.log('🔄 DashboardPage: Authentication check cancelled - not mounted');
-        return;
-      }
+    // Only redirect if not loading and not authenticated
+    if (!authLoading && !isAuthenticated && isMountedRef.current && !loginAttemptedRef.current) {
+      console.log('🔐 User not authenticated, redirecting to login');
+      loginAttemptedRef.current = true; // Mark that we've attempted login
       
-      // Log the condition evaluation
-      console.log('🔍 DashboardPage: Authentication condition check:', {
-        notLoading: !authLoading,
-        notAuthenticated: !isAuthenticated,
-        isMounted: isMountedRef.current,
-        notLoginAttempted: !loginAttemptedRef.current,
-        shouldRedirect: !authLoading && !isAuthenticated && isMountedRef.current && !loginAttemptedRef.current
-      });
+      // Use setTimeout to defer the login call and prevent immediate re-renders
+      const loginTimeout = setTimeout(() => {
+        console.log('⏰ DashboardPage: Login timeout executed, isMounted:', isMountedRef.current);
+        if (isMountedRef.current) {
+          console.log('🚀 DashboardPage: Calling login() function');
+          login();
+        } else {
+          console.log('❌ DashboardPage: Login skipped - component not mounted');
+        }
+      }, 0);
       
-      // Only redirect if not loading and not authenticated
-      if (!authLoading && !isAuthenticated && isMountedRef.current && !loginAttemptedRef.current) {
-        console.log('🔐 User not authenticated, redirecting to login');
-        loginAttemptedRef.current = true; // Mark that we've attempted login
-        
-        // Use setTimeout to defer the login call and prevent immediate re-renders
-        const loginTimeout = setTimeout(() => {
-          console.log('⏰ DashboardPage: Login timeout executed, isMounted:', isMountedRef.current);
-          if (isMountedRef.current) {
-            console.log('🚀 DashboardPage: Calling login() function');
-            login();
-          } else {
-            console.log('❌ DashboardPage: Login skipped - component not mounted');
-          }
-        }, 0);
-        
-        // Cleanup function for this effect
-        return () => {
-          console.log('🔄 DashboardPage: Authentication useEffect cleanup (with login timeout)');
-          clearTimeout(loginTimeout);
-        };
-      }
-    }, 200); // 200ms delay to ensure auth state is stable
+      // Cleanup function for this effect
+      return () => {
+        console.log('🔄 DashboardPage: Authentication useEffect cleanup (with login timeout)');
+        clearTimeout(loginTimeout);
+      };
+    }
     
     // Cleanup function
     return () => {
-      console.log('🔄 DashboardPage: Authentication useEffect cleanup (with auth timeout)');
-      clearTimeout(authTimeout);
+      console.log('🔄 DashboardPage: Authentication useEffect cleanup (no redirect)');
     };
-  }, [authLoading, isAuthenticated, login]);
+  }, [authLoading, login]); // Removed isAuthenticated dependency to prevent infinite re-renders
 
   // Show loading while checking authentication (skip in dev mode)
   if (authLoading && process.env.NEXT_PUBLIC_DISABLE_AUTH !== 'true') {
