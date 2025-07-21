@@ -51,13 +51,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Check if user exists in localStorage
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
-        const userData = JSON.parse(storedUser);
-        setUser(userData);
-        return true;
+        try {
+          const userData = JSON.parse(storedUser);
+          
+          // Check if token is expired (if we have expiry info)
+          if (userData.expiresAt && new Date() > new Date(userData.expiresAt)) {
+            console.log('🔄 AuthProvider: Token expired, clearing user data');
+            localStorage.removeItem('user');
+            setUser(null);
+            return false;
+          }
+          
+          console.log('🔄 AuthProvider: Valid user found in localStorage');
+          setUser(userData);
+          return true;
+        } catch (parseError) {
+          console.error('🔄 AuthProvider: Error parsing stored user data:', parseError);
+          localStorage.removeItem('user');
+          setUser(null);
+          return false;
+        }
       }
+      
+      console.log('🔄 AuthProvider: No user found in localStorage');
       return false;
     } catch (error) {
-      console.error('Auth check error:', error);
+      console.error('🔄 AuthProvider: Auth check error:', error);
       return false;
     }
   };
@@ -92,6 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     console.log('🔄 AuthProvider: Auth useEffect running');
     let isMounted = true;
+    let initTimeout: NodeJS.Timeout | null = null;
     
     const initAuth = async () => {
       console.log('🔄 AuthProvider: initAuth called', { isMounted });
@@ -100,15 +120,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
       
-      console.log('🔄 AuthProvider: Setting loading to true');
-      setIsLoading(true);
-      await checkAuth();
-      
-      if (isMounted) {
-        console.log('🔄 AuthProvider: Setting loading to false');
-        setIsLoading(false);
-      } else {
-        console.log('🔄 AuthProvider: Skipping setLoading(false) - not mounted');
+      try {
+        console.log('🔄 AuthProvider: Setting loading to true');
+        setIsLoading(true);
+        
+        // Add a small delay to ensure consistent state initialization
+        await new Promise(resolve => {
+          initTimeout = setTimeout(resolve, 100);
+        });
+        
+        if (!isMounted) {
+          console.log('🔄 AuthProvider: initAuth cancelled - not mounted');
+          return;
+        }
+        
+        const isAuthenticated = await checkAuth();
+        console.log('🔄 AuthProvider: checkAuth result:', isAuthenticated);
+        
+        if (isMounted) {
+          console.log('🔄 AuthProvider: Setting loading to false');
+          setIsLoading(false);
+        } else {
+          console.log('🔄 AuthProvider: Skipping setLoading(false) - not mounted');
+        }
+      } catch (error) {
+        console.error('🔄 AuthProvider: initAuth error:', error);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
@@ -117,6 +156,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       console.log('🔄 AuthProvider: Auth useEffect cleanup - setting isMounted to false');
       isMounted = false;
+      if (initTimeout) {
+        clearTimeout(initTimeout);
+      }
     };
   }, []);
 
