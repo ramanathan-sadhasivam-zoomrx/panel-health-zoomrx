@@ -74,7 +74,12 @@ const NpsTracker = () => {
 
   // Auto-refresh timer effect
   useEffect(() => {
+    let isMounted = true;
+    
     const checkCacheExpiry = () => {
+      // Only run if component is still mounted
+      if (!isMounted) return;
+      
       // Check if we have cached data and if it's been more than 10 minutes
       if (cachedCompleteData) {
         const now = Date.now();
@@ -83,7 +88,9 @@ const NpsTracker = () => {
         
         if (cacheAge > cacheExpiry) {
           console.log('⏰ Cache expired, triggering auto-refresh');
-          refreshCache();
+          if (isMounted) {
+            refreshCache();
+          }
         } else {
           const timeLeft = Math.round((cacheExpiry - cacheAge) / 1000 / 60);
           console.log(`⏰ Cache still valid (${timeLeft} minutes left)`);
@@ -97,7 +104,10 @@ const NpsTracker = () => {
     // Initial check
     checkCacheExpiry();
     
-    return () => clearInterval(interval);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, [cachedCompleteData]);
 
   // Filter data based on date range (client-side)
