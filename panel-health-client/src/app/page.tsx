@@ -45,8 +45,8 @@ export default function DashboardPage() {
     setExpanded(null);
   };
 
-  // Global loading context
-  const { setLoadingTracker } = useLoading();
+  // Global loading context - temporarily disabled to prevent re-renders
+  // const { setLoadingTracker } = useLoading();
 
   useEffect(() => {
     console.log('🔄 DashboardPage: Component mounted');
@@ -122,7 +122,7 @@ export default function DashboardPage() {
         if (!isMountedRef.current) return;
         setError(null);
         if (!isMountedRef.current) return;
-        setLoadingTracker("survey"); // Set global loading state
+        // setLoadingTracker("survey"); // Temporarily disabled
         
         // First, test if backend is reachable
         console.log('🏥 FRONTEND: Testing backend connectivity...');
@@ -221,7 +221,7 @@ export default function DashboardPage() {
       } finally {
         if (isMountedRef.current) {
           setIsLoading(false);
-          setLoadingTracker(null); // Clear global loading state
+          // setLoadingTracker(null); // Temporarily disabled
         }
       }
     };
