@@ -124,8 +124,11 @@ export default function DashboardPage() {
     
     const fetchSurveys = async () => {
       try {
+        if (!isMountedRef.current) return;
         setIsLoading(true);
+        if (!isMountedRef.current) return;
         setError(null);
+        if (!isMountedRef.current) return;
         setLoadingTracker("survey"); // Set global loading state
         
         // First, test if backend is reachable
@@ -376,7 +379,9 @@ export default function DashboardPage() {
     }
     
     console.log('🏆 TOP 5 SURVEYS CALCULATED:', unique.length);
-    setTop5Surveys(unique);
+    if (isMountedRef.current) {
+      setTop5Surveys(unique);
+    }
   }, [validSurveys]);
 
   // Calculate and set lowest 5 surveys when validSurveys changes
@@ -411,7 +416,9 @@ export default function DashboardPage() {
     }
     
     console.log('📉 LOWEST 5 SURVEYS CALCULATED:', unique.length);
-    setLowest5Surveys(unique);
+    if (isMountedRef.current) {
+      setLowest5Surveys(unique);
+    }
   }, [validSurveys]);
 
   // Select the appropriate list based on filter
