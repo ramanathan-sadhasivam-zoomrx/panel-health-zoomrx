@@ -77,12 +77,11 @@ export default function DashboardPage() {
     // Only redirect if not loading and not authenticated
     if (!authLoading && !isAuthenticated && isMountedRef.current) {
       console.log('🔐 User not authenticated, redirecting to login');
-      // Use setTimeout to avoid potential React state update conflicts
-      setTimeout(() => {
-        if (isMountedRef.current) {
-          login();
-        }
-      }, 0);
+      try {
+        login();
+      } catch (error) {
+        console.error('🔐 Error during login redirect:', error);
+      }
     }
     
     // Cleanup function
@@ -113,6 +112,9 @@ export default function DashboardPage() {
       </div>
     );
   }
+
+  // Ensure all hooks are called before any conditional returns
+  const shouldRenderDashboard = !authLoading && (isAuthenticated || process.env.NEXT_PUBLIC_DISABLE_AUTH === 'true');
 
   // Fetch surveys from API
   useEffect(() => {
@@ -522,6 +524,18 @@ if (error) {
     <div className="flex flex-col items-center justify-center min-h-screen">
       <h2 className="text-2xl font-bold text-red-500 mb-2">Error</h2>
       <p className="text-muted-foreground">{error}</p>
+    </div>
+  );
+}
+
+// Only render dashboard if authentication is properly initialized
+if (!shouldRenderDashboard) {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <p className="text-gray-600">Initializing...</p>
+      </div>
     </div>
   );
 }

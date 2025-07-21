@@ -27,6 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const router = useRouter();
 
   // Check if authentication is disabled for development
@@ -113,6 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (isMounted) {
           console.log('🔄 AuthProvider: Setting loading to false');
           setIsLoading(false);
+          setIsInitialized(true);
         } else {
           console.log('🔄 AuthProvider: Skipping setLoading(false) - not mounted');
         }
@@ -120,16 +122,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('🔄 AuthProvider: Error during authentication initialization:', error);
         if (isMounted) {
           setIsLoading(false);
+          setIsInitialized(true);
         }
       }
     };
 
-    // Use setTimeout to avoid potential React state update conflicts during initialization
-    setTimeout(() => {
-      if (isMounted) {
-        initAuth();
-      }
-    }, 0);
+    // Initialize auth immediately without setTimeout to prevent hook order issues
+    initAuth();
     
     return () => {
       console.log('🔄 AuthProvider: Auth useEffect cleanup - setting isMounted to false');
@@ -139,7 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value: AuthContextType = {
     user,
-    isLoading,
+    isLoading: isLoading || !isInitialized,
     isAuthenticated: isAuthDisabled ? true : !!user, // Always authenticated in dev mode
     login,
     logout,
