@@ -61,6 +61,12 @@ export default function DashboardPage() {
   useEffect(() => {
     console.log('🔄 DashboardPage: Authentication useEffect running', { authLoading, isAuthenticated, mounted });
     
+    // Only run if component is mounted
+    if (!mounted) {
+      console.log('🔄 DashboardPage: Authentication useEffect skipped - not mounted');
+      return;
+    }
+    
     // Skip authentication check in development mode
     if (process.env.NEXT_PUBLIC_DISABLE_AUTH === 'true') {
       console.log('🔧 Development mode: Skipping authentication check');
@@ -69,9 +75,13 @@ export default function DashboardPage() {
     
     if (!authLoading && !isAuthenticated) {
       console.log('🔐 User not authenticated, redirecting to login');
-      login();
+      if (mounted) {
+        login();
+      } else {
+        console.log('🔄 DashboardPage: Skipping login() - not mounted');
+      }
     }
-  }, [authLoading, isAuthenticated, login]);
+  }, [authLoading, isAuthenticated, login, mounted]);
 
   // Show loading while checking authentication (skip in dev mode)
   if (authLoading && process.env.NEXT_PUBLIC_DISABLE_AUTH !== 'true') {
