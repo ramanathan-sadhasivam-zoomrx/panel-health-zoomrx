@@ -100,9 +100,15 @@ export default function DashboardPage() {
       isAuthenticated
     });
     
-    // Only run if component is mounted
+    // Only run if component is mounted and authentication is stable
     if (!isMountedRef.current) {
       console.log('🔄 DashboardPage: Survey fetching useEffect skipped - not mounted');
+      return;
+    }
+    
+    // Skip if authentication is still loading or not authenticated
+    if (authLoading || !isAuthenticated) {
+      console.log('🔄 DashboardPage: Survey fetching useEffect skipped - auth not ready');
       return;
     }
     
@@ -231,7 +237,7 @@ export default function DashboardPage() {
         controller.abort();
       }
     };
-  }, []);
+  }, [authLoading, isAuthenticated]); // Add auth dependencies to run when auth is stable
 
   const enrichedSurveys = useMemo(() => {
     console.log('🔄 FRONTEND: Processing surveys (display only - no calculations)...');
