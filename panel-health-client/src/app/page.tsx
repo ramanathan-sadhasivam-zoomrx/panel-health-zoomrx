@@ -149,7 +149,12 @@ export default function DashboardPage() {
 
   // Fetch surveys from API
   useEffect(() => {
-    console.log('🔄 DashboardPage: Survey fetching useEffect running', { isMounted: isMountedRef.current });
+    console.log('🔄 DashboardPage: Survey fetching useEffect running', { 
+      isMounted: isMountedRef.current,
+      surveysLength: surveys.length,
+      authLoading,
+      isAuthenticated
+    });
     
     // Only run if component is mounted
     if (!isMountedRef.current) {
@@ -387,7 +392,12 @@ export default function DashboardPage() {
 
   // Calculate and set top 5 surveys when validSurveys changes
   useEffect(() => {
-    console.log('🔄 DashboardPage: Top 5 useEffect running', { isMounted: isMountedRef.current, validSurveysLength: validSurveys.length });
+    console.log('🔄 DashboardPage: Top 5 useEffect running', { 
+      isMounted: isMountedRef.current, 
+      validSurveysLength: validSurveys.length,
+      authLoading,
+      isAuthenticated
+    });
     
     // Only run if component is mounted
     if (!isMountedRef.current) {
@@ -424,7 +434,12 @@ export default function DashboardPage() {
 
   // Calculate and set lowest 5 surveys when validSurveys changes
   useEffect(() => {
-    console.log('🔄 DashboardPage: Lowest 5 useEffect running', { isMounted: isMountedRef.current, validSurveysLength: validSurveys.length });
+    console.log('🔄 DashboardPage: Lowest 5 useEffect running', { 
+      isMounted: isMountedRef.current, 
+      validSurveysLength: validSurveys.length,
+      authLoading,
+      isAuthenticated
+    });
     
     // Only run if component is mounted
     if (!isMountedRef.current) {
