@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useCallback, useEffect, useReducer, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface User {
@@ -9,6 +9,33 @@ interface User {
   name: string;
   accessToken: string;
   idToken: string;
+}
+
+interface AuthState {
+  user: User | null;
+  isLoading: boolean;
+  isInitialized: boolean;
+}
+
+type AuthAction =
+  | { type: 'INITIALIZE_START' }
+  | { type: 'INITIALIZE_SUCCESS'; user: User | null }
+  | { type: 'INITIALIZE_ERROR' }
+  | { type: 'LOGOUT' };
+
+function authReducer(state: AuthState, action: AuthAction): AuthState {
+  switch (action.type) {
+    case 'INITIALIZE_START':
+      return { ...state, isLoading: true };
+    case 'INITIALIZE_SUCCESS':
+      return { user: action.user, isLoading: false, isInitialized: true };
+    case 'INITIALIZE_ERROR':
+      return { ...state, isLoading: false, isInitialized: true };
+    case 'LOGOUT':
+      return { ...state, user: null };
+    default:
+      return state;
+  }
 }
 
 interface AuthContextType {
@@ -25,9 +52,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   console.log('🔄 AuthProvider: Component rendering');
   
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [state, dispatch] = useReducer(authReducer, {
+    user: null,
+    isLoading: true,
+    isInitialized: false
+  });
+
   const router = useRouter();
 
   // Check if authentication is disabled for development
@@ -39,19 +69,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // If auth is disabled, always return true (authenticated)
       if (isAuthDisabled) {
         console.log('🔧 Development mode: Authentication disabled');
-        setUser({
+        const devUser = {
           user: 'Development User',
           email: 'dev@zoomrx.com',
           name: 'Development User',
           accessToken: 'dev-token',
           idToken: 'dev-id-token'
-        });
+        };
+        dispatch({ type: 'INITIALIZE_SUCCESS', user: devUser });
         return true;
       }
 
       // Check if localStorage is available (client-side only)
       if (typeof window === 'undefined' || !window.localStorage) {
         console.log('🔄 AuthProvider: localStorage not available (SSR)');
+        dispatch({ type: 'INITIALIZE_ERROR' });
         return false;
       }
 
@@ -59,12 +91,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
         const userData = JSON.parse(storedUser);
-        setUser(userData);
+        dispatch({ type: 'INITIALIZE_SUCCESS', user: userData });
         return true;
       }
+      dispatch({ type: 'INITIALIZE_SUCCESS', user: null });
       return false;
     } catch (error) {
       console.error('Auth check error:', error);
+      dispatch({ type: 'INITIALIZE_ERROR' });
       return false;
     }
   };
@@ -84,7 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (typeof window !== 'undefined' && window.localStorage) {
       localStorage.removeItem('user');
     }
-    setUser(null);
+    dispatch({ type: 'LOGOUT' });
     
     // If auth is disabled, stay on dashboard
     if (isAuthDisabled) {
@@ -108,26 +142,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       try {
         console.log('🔄 AuthProvider: Setting loading to true');
-        setIsLoading(true);
+        dispatch({ type: 'INITIALIZE_START' });
         await checkAuth();
-        
-        if (isMounted) {
-          console.log('🔄 AuthProvider: Setting loading to false');
-          setIsLoading(false);
-          setIsInitialized(true);
-        } else {
-          console.log('🔄 AuthProvider: Skipping setLoading(false) - not mounted');
-        }
       } catch (error) {
         console.error('🔄 AuthProvider: Error during authentication initialization:', error);
         if (isMounted) {
-          setIsLoading(false);
-          setIsInitialized(true);
+          dispatch({ type: 'INITIALIZE_ERROR' });
         }
       }
     };
 
-    // Initialize auth immediately without setTimeout to prevent hook order issues
     initAuth();
     
     return () => {
@@ -137,9 +161,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value: AuthContextType = {
-    user,
-    isLoading: isLoading || !isInitialized,
-    isAuthenticated: isAuthDisabled ? true : !!user, // Always authenticated in dev mode
+    user: state.user,
+    isLoading: state.isLoading || !state.isInitialized,
+    isAuthenticated: isAuthDisabled ? true : !!state.user,
     login,
     logout,
     checkAuth,

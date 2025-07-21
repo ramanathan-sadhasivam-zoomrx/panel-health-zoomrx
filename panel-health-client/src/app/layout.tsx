@@ -15,6 +15,19 @@ export const metadata: Metadata = {
   description: "Panel Health Dashboard",
 };
 
+// Stable provider wrapper to prevent re-renders
+function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <ErrorBoundary>
+      <LoadingProvider>
+        <AuthProvider>
+          <ConditionalRootShell>{children}</ConditionalRootShell>
+        </AuthProvider>
+      </LoadingProvider>
+    </ErrorBoundary>
+  );
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -23,13 +36,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="light" suppressHydrationWarning>
       <body className={`${inter.className} ${manrope.className}`}>
-        <ErrorBoundary>
-          <LoadingProvider>
-            <AuthProvider>
-              <ConditionalRootShell>{children}</ConditionalRootShell>
-            </AuthProvider>
-          </LoadingProvider>
-        </ErrorBoundary>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
