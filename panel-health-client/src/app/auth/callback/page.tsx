@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -10,6 +10,25 @@ function AuthCallbackContent() {
   const { checkAuth } = useAuth();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('Processing authentication...');
+  const isNavigating = useRef(false);
+
+  const safeNavigate = (path: string) => {
+    if (isNavigating.current) {
+      console.log('🚫 Navigation already in progress, skipping...');
+      return;
+    }
+    isNavigating.current = true;
+    try {
+      router.replace(path);
+    } catch (error) {
+      console.error('Navigation error:', error);
+    } finally {
+      // Reset after a short delay to prevent rapid navigation attempts
+      setTimeout(() => {
+        isNavigating.current = false;
+      }, 100);
+    }
+  };
 
   useEffect(() => {
     const handleCallback = async () => {
@@ -160,7 +179,7 @@ function AuthCallbackContent() {
           // Redirect to dashboard after a short delay
           setTimeout(() => {
             console.log('🚀 Redirecting to dashboard...');
-            router.push('/');
+            safeNavigate('/');
           }, 1500);
         } else {
           console.error('❌ Authentication failed:', data);
@@ -175,7 +194,7 @@ function AuthCallbackContent() {
     };
 
     handleCallback();
-  }, [searchParams, router]);
+  }, [searchParams, router, checkAuth]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">

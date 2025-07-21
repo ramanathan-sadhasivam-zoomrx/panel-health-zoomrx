@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useCallback, useEffect, useReducer, ReactNode } from 'react';
+import React, { createContext, useContext, useCallback, useEffect, useReducer, ReactNode, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface User {
@@ -59,9 +59,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const router = useRouter();
+  const isNavigating = useRef(false);
 
   // Check if authentication is disabled for development
   const isAuthDisabled = process.env.NEXT_PUBLIC_DISABLE_AUTH === 'true';
+
+  const safeNavigate = useCallback((path: string) => {
+    if (isNavigating.current) {
+      console.log('🚫 Navigation already in progress, skipping...');
+      return;
+    }
+    isNavigating.current = true;
+    try {
+      router.replace(path);
+    } catch (error) {
+      console.error('Navigation error:', error);
+    } finally {
+      // Reset after a short delay to prevent rapid navigation attempts
+      setTimeout(() => {
+        isNavigating.current = false;
+      }, 100);
+    }
+  }, [router]);
 
   const checkAuth = async (): Promise<boolean> => {
     console.log('🔄 AuthProvider: checkAuth called');
@@ -107,11 +126,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // If auth is disabled, go directly to dashboard
     if (isAuthDisabled) {
       console.log('🔧 Development mode: Direct access to dashboard');
-      router.push('/');
+      safeNavigate('/');
       return;
     }
-    router.push('/login');
-  }, [isAuthDisabled, router]);
+    safeNavigate('/login');
+  }, [isAuthDisabled, safeNavigate]);
 
   const logout = useCallback(() => {
     // Check if localStorage is available (client-side only)
@@ -126,8 +145,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     
-    router.push('/login');
-  }, [isAuthDisabled, router]);
+    safeNavigate('/login');
+  }, [isAuthDisabled, safeNavigate]);
 
   useEffect(() => {
     console.log('🔄 AuthProvider: Auth useEffect running');
