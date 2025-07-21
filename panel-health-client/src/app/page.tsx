@@ -60,7 +60,14 @@ export default function DashboardPage() {
     };
   }, []);
 
-  // Authentication check will be handled after all hooks are called
+  // Authentication redirect useEffect
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated && process.env.NEXT_PUBLIC_DISABLE_AUTH !== 'true' && !loginAttemptedRef.current) {
+      console.log('🔐 User not authenticated, redirecting to login');
+      loginAttemptedRef.current = true;
+      login();
+    }
+  }, [authLoading, isAuthenticated, login]);
 
   // Show loading while checking authentication (skip in dev mode)
   if (authLoading && process.env.NEXT_PUBLIC_DISABLE_AUTH !== 'true') {
@@ -74,16 +81,7 @@ export default function DashboardPage() {
     );
   }
 
-  // Show login prompt if not authenticated (skip in dev mode)
-  if (!isAuthenticated && process.env.NEXT_PUBLIC_DISABLE_AUTH !== 'true') {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600">Redirecting to login...</p>
-        </div>
-      </div>
-    );
-  }
+  // Let useEffect handle authentication redirect - no render logic needed
 
   // Fetch surveys from API
   useEffect(() => {
@@ -607,11 +605,5 @@ export default function DashboardPage() {
     </div>
   );
   
-  // Handle authentication redirect after all hooks are called
-  if (!authLoading && !isAuthenticated && process.env.NEXT_PUBLIC_DISABLE_AUTH !== 'true' && !loginAttemptedRef.current) {
-    console.log('🔐 User not authenticated, redirecting to login');
-    loginAttemptedRef.current = true;
-    login();
-    return null; // Return null to prevent rendering while redirecting
-  }
+
 }
