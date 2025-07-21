@@ -83,13 +83,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    let isMounted = true;
+    
     const initAuth = async () => {
+      if (!isMounted) return;
+      
       setIsLoading(true);
       await checkAuth();
-      setIsLoading(false);
+      
+      if (isMounted) {
+        setIsLoading(false);
+      }
     };
 
     initAuth();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const value: AuthContextType = {
