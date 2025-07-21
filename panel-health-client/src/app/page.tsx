@@ -45,8 +45,8 @@ export default function DashboardPage() {
     setExpanded(null);
   };
 
-  // Global loading context - temporarily disabled to prevent re-renders
-  // const { setLoadingTracker } = useLoading();
+  // Global loading context
+  const { setLoadingTracker } = useLoading();
 
   useEffect(() => {
     console.log('🔄 DashboardPage: Component mounted');
@@ -60,19 +60,19 @@ export default function DashboardPage() {
     };
   }, []);
 
-  // Handle authentication redirect immediately if not authenticated
-  if (!authLoading && !isAuthenticated && process.env.NEXT_PUBLIC_DISABLE_AUTH !== 'true') {
-    // Use window.location for immediate redirect to avoid React re-render issues
-    if (typeof window !== 'undefined' && !loginAttemptedRef.current) {
-      console.log('🔐 User not authenticated, redirecting to login');
-      loginAttemptedRef.current = true;
-      window.location.href = '/login';
-      return null;
+  // Handle authentication redirect using useEffect to avoid hook inconsistencies
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated && process.env.NEXT_PUBLIC_DISABLE_AUTH !== 'true') {
+      if (!loginAttemptedRef.current) {
+        console.log('🔐 User not authenticated, redirecting to login');
+        loginAttemptedRef.current = true;
+        window.location.href = '/login';
+      }
     }
-  }
+  }, [authLoading, isAuthenticated]);
 
-  // Show loading while checking authentication (skip in dev mode)
-  if (authLoading && process.env.NEXT_PUBLIC_DISABLE_AUTH !== 'true') {
+  // Show loading while authentication is being checked
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -83,7 +83,17 @@ export default function DashboardPage() {
     );
   }
 
-  // Let useEffect handle authentication redirect - no render logic needed
+  // Don't render main content if not authenticated
+  if (!isAuthenticated && process.env.NEXT_PUBLIC_DISABLE_AUTH !== 'true') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Redirecting to login...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Fetch surveys from API
   useEffect(() => {
@@ -116,7 +126,7 @@ export default function DashboardPage() {
         if (!isMountedRef.current) return;
         setError(null);
         if (!isMountedRef.current) return;
-        // setLoadingTracker("survey"); // Temporarily disabled
+        setLoadingTracker("survey");
         
         // First, test if backend is reachable
         console.log('🏥 FRONTEND: Testing backend connectivity...');
