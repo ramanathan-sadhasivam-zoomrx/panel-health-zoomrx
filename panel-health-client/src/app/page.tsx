@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { SurveyCard } from '@/components/ui/SurveyCard';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -31,7 +31,7 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [mounted, setMounted] = useState(false);
+  const isMountedRef = useRef(true);
   const [surveys, setSurveys] = useState<Survey[]>([]);
   
   // Separate state for top 5 and lowest 5 to ensure complete isolation
@@ -50,19 +50,20 @@ export default function DashboardPage() {
   const { setLoadingTracker } = useLoading();
 
   useEffect(() => {
-    console.log('🔄 DashboardPage: Setting mounted to true');
-    setMounted(true);
+    console.log('🔄 DashboardPage: Component mounted');
+    isMountedRef.current = true;
     return () => {
-      console.log('🔄 DashboardPage: Component unmounting, mounted will be false');
+      console.log('🔄 DashboardPage: Component unmounting');
+      isMountedRef.current = false;
     };
   }, []);
 
   // Check authentication
   useEffect(() => {
-    console.log('🔄 DashboardPage: Authentication useEffect running', { authLoading, isAuthenticated, mounted });
+    console.log('🔄 DashboardPage: Authentication useEffect running', { authLoading, isAuthenticated, isMounted: isMountedRef.current });
     
     // Only run if component is mounted
-    if (!mounted) {
+    if (!isMountedRef.current) {
       console.log('🔄 DashboardPage: Authentication useEffect skipped - not mounted');
       return;
     }
@@ -75,13 +76,13 @@ export default function DashboardPage() {
     
     if (!authLoading && !isAuthenticated) {
       console.log('🔐 User not authenticated, redirecting to login');
-      if (mounted) {
+      if (isMountedRef.current) {
         login();
       } else {
         console.log('🔄 DashboardPage: Skipping login() - not mounted');
       }
     }
-  }, [authLoading, isAuthenticated, login, mounted]);
+  }, [authLoading, isAuthenticated, login]);
 
   // Show loading while checking authentication (skip in dev mode)
   if (authLoading && process.env.NEXT_PUBLIC_DISABLE_AUTH !== 'true') {
@@ -108,10 +109,10 @@ export default function DashboardPage() {
 
   // Fetch surveys from API
   useEffect(() => {
-    console.log('🔄 DashboardPage: Survey fetching useEffect running', { mounted });
+    console.log('🔄 DashboardPage: Survey fetching useEffect running', { isMounted: isMountedRef.current });
     
     // Only run if component is mounted
-    if (!mounted) {
+    if (!isMountedRef.current) {
       console.log('🔄 DashboardPage: Survey fetching useEffect skipped - not mounted');
       return;
     }
@@ -156,7 +157,7 @@ export default function DashboardPage() {
           surveyData = (response as any).data || [];
           console.log('📊 FRONTEND: Survey data extracted:', surveyData.length, 'surveys');
                   console.log('📊 FRONTEND: Processing complete dataset for accurate Bayesian analysis');
-        if (mounted) {
+        if (isMountedRef.current) {
           setSurveys(surveyData);
         }
         } catch (apiError: unknown) {
@@ -216,11 +217,11 @@ export default function DashboardPage() {
         
               } catch (err: unknown) {
           console.error('Error fetching surveys:', err);
-          if (mounted) {
+          if (isMountedRef.current) {
             setError(err instanceof Error ? err.message : 'An error occurred');
           }
       } finally {
-        if (mounted) {
+        if (isMountedRef.current) {
           setIsLoading(false);
           setLoadingTracker(null); // Clear global loading state
         }
@@ -238,7 +239,7 @@ export default function DashboardPage() {
         controller.abort();
       }
     };
-  }, [mounted]);
+  }, []);
 
   const enrichedSurveys = useMemo(() => {
     console.log('🔄 FRONTEND: Processing surveys (display only - no calculations)...');
@@ -343,10 +344,10 @@ export default function DashboardPage() {
 
   // Calculate and set top 5 surveys when validSurveys changes
   useEffect(() => {
-    console.log('🔄 DashboardPage: Top 5 useEffect running', { mounted, validSurveysLength: validSurveys.length });
+    console.log('🔄 DashboardPage: Top 5 useEffect running', { isMounted: isMountedRef.current, validSurveysLength: validSurveys.length });
     
     // Only run if component is mounted
-    if (!mounted) {
+    if (!isMountedRef.current) {
       console.log('🔄 DashboardPage: Top 5 useEffect skipped - not mounted');
       return;
     }
@@ -374,14 +375,14 @@ export default function DashboardPage() {
     
     console.log('🏆 TOP 5 SURVEYS CALCULATED:', unique.length);
     setTop5Surveys(unique);
-  }, [validSurveys, mounted]);
+  }, [validSurveys]);
 
   // Calculate and set lowest 5 surveys when validSurveys changes
   useEffect(() => {
-    console.log('🔄 DashboardPage: Lowest 5 useEffect running', { mounted, validSurveysLength: validSurveys.length });
+    console.log('🔄 DashboardPage: Lowest 5 useEffect running', { isMounted: isMountedRef.current, validSurveysLength: validSurveys.length });
     
     // Only run if component is mounted
-    if (!mounted) {
+    if (!isMountedRef.current) {
       console.log('🔄 DashboardPage: Lowest 5 useEffect skipped - not mounted');
       return;
     }
@@ -409,7 +410,7 @@ export default function DashboardPage() {
     
     console.log('📉 LOWEST 5 SURVEYS CALCULATED:', unique.length);
     setLowest5Surveys(unique);
-  }, [validSurveys, mounted]);
+  }, [validSurveys]);
 
   // Select the appropriate list based on filter
   const filteredSurveys = useMemo(() => {
