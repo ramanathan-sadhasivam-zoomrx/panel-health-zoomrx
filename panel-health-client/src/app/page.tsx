@@ -88,6 +88,9 @@ export default function DashboardPage() {
 
   // Fetch surveys from API
   useEffect(() => {
+    // Only run if component is mounted
+    if (!mounted) return;
+    
     let timeoutId: NodeJS.Timeout | null = null;
     let controller: AbortController | null = null;
     
@@ -127,8 +130,10 @@ export default function DashboardPage() {
           console.log('📥 FRONTEND: API response received:', response);
           surveyData = (response as any).data || [];
           console.log('📊 FRONTEND: Survey data extracted:', surveyData.length, 'surveys');
-          console.log('📊 FRONTEND: Processing complete dataset for accurate Bayesian analysis');
+                  console.log('📊 FRONTEND: Processing complete dataset for accurate Bayesian analysis');
+        if (mounted) {
           setSurveys(surveyData);
+        }
         } catch (apiError: unknown) {
           console.error('❌ FRONTEND: API call failed:', apiError);
           console.error('❌ FRONTEND: Error details:', {
@@ -186,10 +191,14 @@ export default function DashboardPage() {
         
               } catch (err: unknown) {
           console.error('Error fetching surveys:', err);
-          setError(err instanceof Error ? err.message : 'An error occurred');
+          if (mounted) {
+            setError(err instanceof Error ? err.message : 'An error occurred');
+          }
       } finally {
-        setIsLoading(false);
-        setLoadingTracker(null); // Clear global loading state
+        if (mounted) {
+          setIsLoading(false);
+          setLoadingTracker(null); // Clear global loading state
+        }
       }
     };
 
@@ -204,7 +213,7 @@ export default function DashboardPage() {
         controller.abort();
       }
     };
-  }, []);
+  }, [mounted]);
 
   const enrichedSurveys = useMemo(() => {
     console.log('🔄 FRONTEND: Processing surveys (display only - no calculations)...');
