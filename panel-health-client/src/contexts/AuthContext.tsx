@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface User {
@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const login = () => {
+  const login = useCallback(() => {
     // If auth is disabled, go directly to dashboard
     if (isAuthDisabled) {
       console.log('🔧 Development mode: Direct access to dashboard');
@@ -70,9 +70,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     router.push('/login');
-  };
+  }, [isAuthDisabled, router]);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem('user');
     setUser(null);
     
@@ -83,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     
     router.push('/login');
-  };
+  }, [isAuthDisabled, router]);
 
   useEffect(() => {
     console.log('🔄 AuthProvider: Auth useEffect running');

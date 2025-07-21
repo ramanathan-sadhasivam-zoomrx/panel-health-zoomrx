@@ -74,14 +74,16 @@ export default function DashboardPage() {
       return;
     }
     
-    if (!authLoading && !isAuthenticated) {
+    // Only redirect if not loading and not authenticated
+    if (!authLoading && !isAuthenticated && isMountedRef.current) {
       console.log('🔐 User not authenticated, redirecting to login');
-      if (isMountedRef.current) {
-        login();
-      } else {
-        console.log('🔄 DashboardPage: Skipping login() - not mounted');
-      }
+      login();
     }
+    
+    // Cleanup function
+    return () => {
+      console.log('🔄 DashboardPage: Authentication useEffect cleanup');
+    };
   }, [authLoading, isAuthenticated, login]);
 
   // Show loading while checking authentication (skip in dev mode)
