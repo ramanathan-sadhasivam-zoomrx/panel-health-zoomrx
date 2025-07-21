@@ -309,6 +309,9 @@ export default function DashboardPage() {
 
   // Calculate and set top 5 surveys when validSurveys changes
   useEffect(() => {
+    // Only run if component is mounted
+    if (!mounted) return;
+    
     const seen = new Set();
     const unique = [];
     
@@ -332,10 +335,13 @@ export default function DashboardPage() {
     
     console.log('🏆 TOP 5 SURVEYS CALCULATED:', unique.length);
     setTop5Surveys(unique);
-  }, [validSurveys]);
+  }, [validSurveys, mounted]);
 
   // Calculate and set lowest 5 surveys when validSurveys changes
   useEffect(() => {
+    // Only run if component is mounted
+    if (!mounted) return;
+    
     const seen = new Set();
     const unique = [];
     
@@ -359,7 +365,7 @@ export default function DashboardPage() {
     
     console.log('📉 LOWEST 5 SURVEYS CALCULATED:', unique.length);
     setLowest5Surveys(unique);
-  }, [validSurveys]);
+  }, [validSurveys, mounted]);
 
   // Select the appropriate list based on filter
   const filteredSurveys = useMemo(() => {
