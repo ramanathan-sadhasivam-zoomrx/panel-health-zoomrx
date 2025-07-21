@@ -530,7 +530,7 @@ export default function DashboardPage() {
           </div>
           <div className="flex items-center gap-2">
             <Dialog>
-              {mounted ? (
+              {isMountedRef.current ? (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <DialogTrigger asChild>
