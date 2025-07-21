@@ -88,6 +88,9 @@ export default function DashboardPage() {
 
   // Fetch surveys from API
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout | null = null;
+    let controller: AbortController | null = null;
+    
     const fetchSurveys = async () => {
       try {
         setIsLoading(true);
@@ -109,14 +112,17 @@ export default function DashboardPage() {
         let surveyData = [];
         try {
           // Add timeout for full dataset processing (optimized - should be much faster now)
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minute timeout
+          controller = new AbortController();
+          timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minute timeout
           
           console.log('⏱️ FRONTEND: Starting API call with 5-minute timeout (optimized processing)...');
           
           // Use the full survey API with Bayesian smoothing
           const response = await surveyAPI.getAllSurveys();
-          clearTimeout(timeoutId);
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+            timeoutId = null;
+          }
           console.log('⏱️ FRONTEND: API call completed within timeout');
           console.log('📥 FRONTEND: API response received:', response);
           surveyData = (response as any).data || [];
@@ -188,6 +194,16 @@ export default function DashboardPage() {
     };
 
     fetchSurveys();
+
+    // Cleanup function - This is what was missing!
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      if (controller) {
+        controller.abort();
+      }
+    };
   }, []);
 
   const enrichedSurveys = useMemo(() => {
