@@ -476,18 +476,6 @@ export default function DashboardPage() {
                 </TabsTrigger>
               </TabsList>
             </Tabs>
-            {/* Average UX Score Display */}
-            <div className="flex items-center gap-2 ml-4">
-              <div className="bg-white rounded-lg px-4 py-2 shadow-sm border">
-                <p className="text-sm text-muted-foreground">Average UX Score</p>
-                <p className="text-lg font-bold text-blue-600">
-                  {filteredSurveys.length > 0 
-                    ? (filteredSurveys.reduce((sum, s) => sum + s.uxScore, 0) / filteredSurveys.length).toFixed(1)
-                    : '0.0'
-                  }
-                </p>
-              </div>
-            </div>
           </div>
           <div className="flex items-center gap-2">
             <Dialog>

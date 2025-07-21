@@ -83,7 +83,7 @@ export function SurveyCard({ survey, expanded, onExpand, cardWidth, style }: Sur
             <div className="flex flex-col justify-center items-end">
               <p className="text-2xl font-bold">{typeof uxScore === 'number' ? uxScore.toFixed(1) : '0.0'}</p>
               <p className="text-xs text-muted-foreground">
-                UX Score {survey.xscore !== null && survey.xscore !== undefined ? '(Bayesian)' : '(Legacy)'}
+                UX Score
               </p>
             </div>
           </div>
@@ -95,11 +95,6 @@ export function SurveyCard({ survey, expanded, onExpand, cardWidth, style }: Sur
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-semibold">UX Score Breakdown</h3>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs px-2 py-1 rounded-full ${survey.xscore !== null && survey.xscore !== undefined ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                      {survey.xscore !== null && survey.xscore !== undefined ? 'Bayesian XScore' : 'Legacy Score'}
-                    </span>
-                  </div>
                 </div>
                 {/* 5-column grid for metrics */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2">
