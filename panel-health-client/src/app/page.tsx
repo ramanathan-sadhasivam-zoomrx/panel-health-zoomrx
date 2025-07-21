@@ -344,11 +344,67 @@ export default function DashboardPage() {
     return valid;
   }, [enrichedSurveys]);
 
-  // Temporarily disable useMemo to prevent re-renders
-  const top5Surveys = [];
+  // Calculate top 5 surveys using useMemo to prevent unnecessary re-renders
+  const top5Surveys = useMemo(() => {
+    console.log('🔄 DashboardPage: Top 5 useMemo running', { 
+      validSurveysLength: validSurveys.length
+    });
+    
+    const seen = new Set();
+    const unique = [];
+    
+    // Sort by UX score descending (highest first)
+    const sortedSurveys = [...validSurveys].sort((a, b) => b.uxScore - a.uxScore);
+    
+    for (const survey of sortedSurveys) {
+      if (unique.length >= 5) break;
+      
+      // Create a unique key based on survey ID
+      const key = survey.id ? `survey-${survey.id}` : `${survey.crmId}-${survey.uxScore}`;
+      
+      if (!seen.has(key)) {
+        seen.add(key);
+        unique.push(survey);
+        console.log(`✅ ADDED TO TOP 5: Survey ID ${survey.id} | CRM ${survey.crmId} - ${survey.surveyTitle} (${survey.uxScore.toFixed(2)})`);
+      } else {
+        console.log(`🚫 DUPLICATE SKIPPED: Survey ID ${survey.id} | CRM ${survey.crmId} - ${survey.surveyTitle} (${survey.uxScore.toFixed(2)})`);
+      }
+    }
+    
+    console.log('🏆 TOP 5 SURVEYS CALCULATED:', unique.length);
+    return unique;
+  }, [validSurveys]);
 
-  // Temporarily disable useMemo to prevent re-renders
-  const lowest5Surveys = [];
+  // Calculate lowest 5 surveys using useMemo to prevent unnecessary re-renders
+  const lowest5Surveys = useMemo(() => {
+    console.log('🔄 DashboardPage: Lowest 5 useMemo running', { 
+      validSurveysLength: validSurveys.length
+    });
+    
+    const seen = new Set();
+    const unique = [];
+    
+    // Sort by UX score ascending (lowest first)
+    const sortedSurveys = [...validSurveys].sort((a, b) => a.uxScore - b.uxScore);
+    
+    for (const survey of sortedSurveys) {
+      if (unique.length >= 5) break;
+      
+      // Create a unique key based on survey ID
+      const key = survey.id ? `survey-${survey.id}` : `${survey.crmId}-${survey.uxScore}`;
+      
+      if (!seen.has(key)) {
+        seen.add(key);
+        unique.push(survey);
+        console.log(`✅ ADDED TO LOWEST 5: Survey ID ${survey.id} | CRM ${survey.crmId} - ${survey.surveyTitle} (${survey.uxScore.toFixed(2)})`);
+      } else {
+        console.log(`🚫 DUPLICATE SKIPPED: Survey ID ${survey.id} | CRM ${survey.crmId} - ${survey.surveyTitle} (${survey.uxScore.toFixed(2)})`);
+      }
+    }
+    
+    console.log('📉 LOWEST 5 SURVEYS CALCULATED:', unique.length);
+    return unique;
+  }, [validSurveys]);
 
   // Select the appropriate list based on filter
   const filteredSurveys = useMemo(() => {
