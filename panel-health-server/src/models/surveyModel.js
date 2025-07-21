@@ -24,7 +24,7 @@ class SurveyModel {
     }
 
     try {
-      // Query 1: Get all surveys with basic info (one row per survey, but data from all waves)
+      // Query 1: Get surveys with basic info (only surveys that have screener questions AND at least 5 panelist completes)
       const surveysQuery = `
         SELECT DISTINCT
           s.id,
@@ -36,6 +36,30 @@ class SurveyModel {
           recent_pw.project_id as project_id,
           last_wave.id as last_wave_id
         FROM surveys s
+        INNER JOIN (
+          -- Subquery to get only surveys with screener questions
+          SELECT DISTINCT all_q.sid
+          FROM lime_questions screener_q
+          JOIN lime_question_attributes qa ON screener_q.qid = qa.qid
+          JOIN lime_questions all_q ON all_q.sid = screener_q.sid AND all_q.gid = screener_q.gid
+          WHERE qa.attribute IN ('screener_failure', 'panel_screener_failure', 'wave_prescreener')
+            AND screener_q.parent_qid = 0
+            AND all_q.parent_qid = 0
+            AND screener_q.archived = 0
+            AND all_q.archived = 0
+        ) screener_surveys ON s.id = screener_surveys.sid
+        INNER JOIN (
+          -- Subquery to get only surveys with at least 5 panelist completes
+          SELECT 
+            s2.id as survey_id
+          FROM surveys s2
+          JOIN waves w2 ON s2.id = w2.survey_id AND w2.status = 1
+          JOIN users_waves uw2 ON w2.id = uw2.wave_id AND uw2.status = 1
+          JOIN users u2 ON uw2.user_id = u2.id AND u2.type = 1
+          WHERE s2.active = 1
+          GROUP BY s2.id
+          HAVING COUNT(DISTINCT uw2.user_id) >= 5
+        ) panelist_surveys ON s.id = panelist_surveys.survey_id
         LEFT JOIN lime_surveys_languagesettings lsl ON lsl.surveyls_survey_id = s.id
         LEFT JOIN (
           SELECT 
@@ -59,6 +83,7 @@ class SurveyModel {
           WHERE pw2.id IS NOT NULL
         ) recent_pw ON s.id = recent_pw.survey_id AND recent_pw.rn = 1
         WHERE s.active = 1
+          AND s.type NOT IN (4, 7, 8, 9, 10, 11, 12, 13, 15, 16, 19)
         ORDER BY s.id DESC
       `;
       
@@ -82,18 +107,19 @@ class SurveyModel {
         LEFT JOIN users_waves uw ON w.id = uw.wave_id AND uw.start_date IS NOT NULL
         LEFT JOIN users_wave_details uwd ON uw.id = uwd.id AND uwd.feedback_rating > 0
         WHERE s.active = 1
+          AND s.type NOT IN (4, 7, 8, 9, 10, 11, 12, 13, 15, 16, 19)
           AND uw.start_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
         GROUP BY s.id
       `;
       
-      // Query 3: Get screener questions data (corrected)
+      // Query 3: Get screener questions data (only surveys with at least 1 screener question)
       const screenerQuery = `
         SELECT 
           s.id as survey_id,
           COUNT(DISTINCT group_data.gid) as screener_group_count,
           SUM(group_data.questions_in_group) as total_screener_questions
         FROM surveys s
-        LEFT JOIN (
+        INNER JOIN (
             SELECT 
                 all_q.sid,
                 all_q.gid,
@@ -104,10 +130,14 @@ class SurveyModel {
             WHERE qa.attribute IN ('screener_failure', 'panel_screener_failure', 'wave_prescreener')
                 AND screener_q.parent_qid = 0
                 AND all_q.parent_qid = 0
+                AND screener_q.archived = 0
+                AND all_q.archived = 0
             GROUP BY all_q.sid, all_q.gid
         ) group_data ON s.id = group_data.sid
         WHERE s.active = 1
+          AND s.type NOT IN (4, 7, 8, 9, 10, 11, 12, 13, 15, 16, 19)
         GROUP BY s.id
+        HAVING SUM(group_data.questions_in_group) > 0
       `;
       
       // Query 4: Get all qualitative comments for sentiment analysis
@@ -1089,6 +1119,8 @@ class SurveyModel {
           WHERE qa.attribute IN ('screener_failure', 'panel_screener_failure', 'wave_prescreener')
               AND screener_q.parent_qid = 0
               AND all_q.parent_qid = 0
+              AND screener_q.archived = 0
+              AND all_q.archived = 0
           GROUP BY all_q.sid, all_q.gid
       ) group_data ON s.id = group_data.sid
       WHERE s.id = ?
