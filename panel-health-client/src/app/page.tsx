@@ -196,9 +196,6 @@ export default function DashboardPage() {
   }, [setLoadingTracker]);
 
   const enrichedSurveys = useMemo(() => {
-    console.log('🔄 FRONTEND: Processing surveys (display only - no calculations)...');
-    console.log('🔄 FRONTEND: Total surveys to process:', surveys.length);
-    
     const processed = surveys.map(survey => {
       // Use backend XScore as primary score, fallback to legacy only if completely missing
       const uxScore = survey.xscore !== null && survey.xscore !== undefined && !isNaN(survey.xscore) 
@@ -212,19 +209,6 @@ export default function DashboardPage() {
       const screenout = survey.breakdown?.screenoutRate?.contribution ?? 0;
       const questionCount = survey.breakdown?.screenerQuestionCount?.contribution ?? 0;
       
-      // Log backend data for debugging
-      if (survey.breakdown) {
-        console.log(`🔍 SURVEY ${survey.id}: Backend breakdown data:`, {
-          userRating: typeof userRating === 'number' ? userRating.toFixed(2) : 'N/A',
-          sentiment: typeof sentiment === 'number' ? sentiment.toFixed(2) : 'N/A',
-          dropoff: typeof dropoff === 'number' ? dropoff.toFixed(2) : 'N/A',
-          screenout: typeof screenout === 'number' ? screenout.toFixed(2) : 'N/A',
-          questionCount: typeof questionCount === 'number' ? questionCount.toFixed(2) : 'N/A'
-        });
-      } else {
-        console.warn(`⚠️  SURVEY ${survey.id}: No backend breakdown data available`);
-      }
-      
       return {
         ...survey,
         uxScore,
@@ -237,9 +221,6 @@ export default function DashboardPage() {
         }
       };
     });
-    
-    console.log('✅ FRONTEND: Survey processing complete (backend data only)');
-    console.log('📊 FRONTEND: Sample survey uxScore:', processed[0]?.uxScore);
     
     return processed;
   }, [surveys]);
@@ -261,8 +242,6 @@ export default function DashboardPage() {
       typeof survey.uxScore === 'number' && 
       !isNaN(survey.uxScore)
     );
-    
-    console.log(`🔍 VALID SURVEYS: ${valid.length} out of ${enrichedSurveys.length} total`);
     
     if (valid.length === 0) {
       console.log('🚨 FRONTEND: NO VALID SURVEYS FOUND!');
@@ -414,6 +393,9 @@ export default function DashboardPage() {
     console.log('📉 LOWEST 5 SURVEYS:');
     lowest5Surveys.forEach((survey, index) => {
       console.log(`${index + 1}. Survey ID: ${survey.id} | CRM ID: ${survey.crmId} | Title: ${survey.surveyTitle} | UX Score: ${survey.uxScore.toFixed(2)} | Bayesian XScore: ${survey.xscore?.toFixed(2) || 'N/A'} | Legacy Score: ${survey.experienceScore?.toFixed(2) || 'N/A'}`);
+      // Log contributions breakdown for each lowest survey
+      const totalContributions = survey.contributions.userRating + survey.contributions.sentiment + survey.contributions.dropoff + survey.contributions.screenout + survey.contributions.questionCount;
+      console.log(`   📊 CONTRIBUTIONS: User Rating: ${survey.contributions.userRating.toFixed(2)} | Sentiment: ${survey.contributions.sentiment.toFixed(2)} | Dropoff: ${survey.contributions.dropoff.toFixed(2)} | Screenout: ${survey.contributions.screenout.toFixed(2)} | Questions: ${survey.contributions.questionCount.toFixed(2)} | Total: ${totalContributions.toFixed(2)} | UX Score: ${survey.uxScore.toFixed(2)} | Match: ${Math.abs(totalContributions - survey.uxScore) < 0.1 ? '✅' : '❌'}`);
     });
     
     // Log current filter selection

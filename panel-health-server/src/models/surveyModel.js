@@ -109,9 +109,12 @@ class SurveyModel {
         FROM surveys s
         LEFT JOIN waves w ON s.id = w.survey_id 
         LEFT JOIN users_waves uw ON w.id = uw.wave_id AND uw.start_date IS NOT NULL
+        LEFT JOIN users u ON uw.user_id = u.id
         LEFT JOIN users_wave_details uwd ON uw.id = uwd.id AND uwd.feedback_rating > 0
         WHERE s.active = 1
-          AND s.type NOT IN (4, 7, 8, 9, 10, 11, 12, 13, 15, 16, 19)
+          AND s.type NOT IN (2, 3, 4, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 19)
+          AND u.type = 1
+          AND uw.status != 6
           AND uw.start_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
         GROUP BY s.id
       `;
@@ -540,8 +543,27 @@ class SurveyModel {
       console.log('   - maxScreenerQuestionCount:', globalAverages.maxScreenerQuestionCount);
       console.log('   - minScreenerQuestionCount:', globalAverages.minScreenerQuestionCount);
 
+      // Fetch all individual user ratings for Bayesian smoothing
+      const individualRatingsQuery = `
+        SELECT s.id as survey_id, uwd.feedback_rating
+        FROM surveys s
+        JOIN waves w ON s.id = w.survey_id AND w.status = 1
+        JOIN users_waves uw ON w.id = uw.wave_id AND uw.start_date IS NOT NULL
+        JOIN users u ON uw.user_id = u.id AND u.type = 1
+        JOIN users_wave_details uwd ON uw.id = uwd.id AND uwd.feedback_rating > 0
+        WHERE s.id IN (${surveys.map(s => s.id).join(",")})
+          AND uw.start_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+      `;
+      const individualRatingsRows = await database.query(individualRatingsQuery);
+      // Build a map: surveyId -> [ratings]
+      const ratingsMap = new Map();
+      for (const row of individualRatingsRows) {
+        if (!ratingsMap.has(row.survey_id)) ratingsMap.set(row.survey_id, []);
+        ratingsMap.get(row.survey_id).push(row.feedback_rating);
+      }
+
       // Process all data in code
-      const surveysWithMetrics = await this.processAllSurveyData(surveys, metrics, screenerData, commentsData, globalAverages);
+      const surveysWithMetrics = await this.processAllSurveyData(surveys, metrics, screenerData, commentsData, globalAverages, ratingsMap);
 
       // Cache the results
       this.surveyCache.set(cacheKey, {
@@ -557,7 +579,7 @@ class SurveyModel {
   }
 
   // Process all survey data in code
-  async processAllSurveyData(surveys, metrics, screenerData, commentsData, globalAverages) {
+  async processAllSurveyData(surveys, metrics, screenerData, commentsData, globalAverages, ratingsMap) {
     // Create lookup maps for faster processing
     const metricsMap = new Map(metrics.map(m => [m.survey_id, m]));
     const screenerMap = new Map(screenerData.map(s => [s.survey_id, s]));
@@ -599,8 +621,7 @@ class SurveyModel {
       const surveyComments = commentsMap.get(survey.id) || [];
 
       // Prepare user ratings for Bayesian smoothing
-      const userRatings = surveyMetrics.feedback_count > 0 ? 
-        [surveyMetrics.average_rating] : [];
+      const userRatings = ratingsMap.get(survey.id) || [];
       
       // Prepare user sentiments for Bayesian smoothing (optimized)
       const userSentiments = surveyComments.length > 0 ? 
@@ -631,13 +652,18 @@ class SurveyModel {
         // Only show detailed calculation for the first survey OR surveys that will use fallback scores
         const willNeedFallback = (!userRatings.length && !userSentiments.length) || !surveyMetrics.total_users;
         
+        if (survey.id === 640974) {
+          // Only log for survey 640974
+          const K_used = optimalK;
+          const avg_rating = userRatings.length > 0 ? userRatings.reduce((sum, rating) => sum + rating, 0) / userRatings.length : globalAverages.globalAvgRating;
+          const adjusted_rating = ((userRatings.length / (userRatings.length + K_used)) * avg_rating + (K_used / (userRatings.length + K_used)) * globalAverages.globalAvgRating);
+          const normalized_user_rating = (adjusted_rating - 1) / 9;
+          const user_rating_contribution = normalized_user_rating * 35;
+          console.log(`[UXSCORE] SurveyID: ${survey.id} | avg_rating: ${avg_rating.toFixed(2)} | rating_count: ${userRatings.length} | K: ${K_used} | global_avg_rating: ${globalAverages.globalAvgRating.toFixed(2)} | adjusted_rating: ${adjusted_rating.toFixed(4)} | normalized_user_rating: ${normalized_user_rating.toFixed(4)} | user_rating_contribution: ${user_rating_contribution.toFixed(2)}`);
+        }
         if (processedCount === 1 || willNeedFallback) {
-          if (processedCount === 1) {
-            console.log(`\n🔍 DETAILED CALCULATION FOR SURVEY ${survey.id}:`);
-          }
           bayesianResult = experienceScoreCalculator.calculateBayesianXScore(surveyData, globalAverages, optimalK);
         } else {
-          // For other surveys, use a silent version
           bayesianResult = experienceScoreCalculator.calculateBayesianXScoreSilent(surveyData, globalAverages, optimalK);
         }
       } catch (error) {
