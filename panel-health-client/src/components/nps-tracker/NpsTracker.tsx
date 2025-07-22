@@ -118,73 +118,80 @@ const NpsTracker = () => {
 
     let startDate, endDate;
 
+    // Parse date range
     if (dateRange.type === 'custom' && dateRange.from && dateRange.to) {
       // Custom date range
-      if (dateRange.from.month && dateRange.from.year && 
-          dateRange.to.month && dateRange.to.year) {
+      if (dateRange.from.month && dateRange.from.year && dateRange.to.month && dateRange.to.year) {
         startDate = new Date(dateRange.from.year, dateRange.from.month - 1, 1);
         endDate = new Date(dateRange.to.year, dateRange.to.month, 0); // Last day of the month
-        console.log('🔍 Custom date range:', {
-          from: dateRange.from,
-          to: dateRange.to,
-          startDate: startDate.toISOString(),
-          endDate: endDate.toISOString()
-        });
-        console.log('🔍 Custom date range debugging - Raw dateRange:', JSON.stringify(dateRange, null, 2));
+        console.log(`🔍 Custom date range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
       } else {
         console.log('🔍 Invalid custom date range format');
-        console.log('🔍 dateRange.from:', dateRange.from);
-        console.log('🔍 dateRange.to:', dateRange.to);
         return data;
       }
-    } else {
+    } else if (dateRange.type === 'last12months') {
       // Last 12 months
       const currentDate = new Date();
       startDate = new Date();
       startDate.setMonth(currentDate.getMonth() - 11);
       startDate.setDate(1);
       endDate = currentDate;
+      console.log(`🔍 Last 12 months range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
+    } else {
+      // Default to all data
+      console.log('🔍 No specific date range, returning all data');
+      return data;
     }
 
-    console.log(`🔍 Filtering from ${startDate.toISOString()} to ${endDate.toISOString()}`);
-    
-    // Log available data before filtering
-    console.log('🔍 Available data before filtering:');
-    if (data.overall) {
-      const availableYears = [...new Set(data.overall.map((item: any) => item.year))].sort();
-      const availableMonths = data.overall.map((item: any) => `${item.year}-${item.month}`).sort();
-      console.log('🔍 Available years in overall data:', availableYears);
-      console.log('🔍 Available months in overall data:', availableMonths);
-    }
+    // Helper function to parse date from different formats
+    const parseDate = (item: any, type: string) => {
+      if (type === 'completes' || type === 'screenouts') {
+        // For completes/screenouts, the date is in "YYYY-MM" format
+        if (item.month && typeof item.month === 'string') {
+          return new Date(item.month + '-01');
+        }
+      } else {
+        // For other types, use year and month
+        if (item.year && item.month) {
+          return new Date(item.year, item.month - 1, 1);
+        }
+      }
+      return null;
+    };
 
     // Filter each data type
     const filteredData = {
       overall: data.overall?.filter((item: any) => {
-        const itemDate = new Date(item.year, item.month - 1);
+        const itemDate = parseDate(item, 'overall');
+        if (!itemDate) return false;
         const isInRange = itemDate >= startDate && itemDate <= endDate;
         console.log(`🔍 Overall item ${item.year}-${item.month}: ${itemDate.toISOString()} - In range: ${isInRange}`);
         return isInRange;
       }) || [],
       dashboard: data.dashboard?.filter((item: any) => {
-        const itemDate = new Date(item.year, item.month - 1);
+        const itemDate = parseDate(item, 'dashboard');
+        if (!itemDate) return false;
         const isInRange = itemDate >= startDate && itemDate <= endDate;
         console.log(`🔍 Dashboard item ${item.year}-${item.month}: ${itemDate.toISOString()} - In range: ${isInRange}`);
         return isInRange;
       }) || [],
       postSurvey: data.postSurvey?.filter((item: any) => {
-        const itemDate = new Date(item.year, item.month - 1);
+        const itemDate = parseDate(item, 'postSurvey');
+        if (!itemDate) return false;
         const isInRange = itemDate >= startDate && itemDate <= endDate;
         console.log(`🔍 PostSurvey item ${item.year}-${item.month}: ${itemDate.toISOString()} - In range: ${isInRange}`);
         return isInRange;
       }) || [],
       completes: data.completes?.filter((item: any) => {
-        const itemDate = new Date(item.month + '-01');
+        const itemDate = parseDate(item, 'completes');
+        if (!itemDate) return false;
         const isInRange = itemDate >= startDate && itemDate <= endDate;
         console.log(`🔍 Completes item ${item.month}: ${itemDate.toISOString()} - In range: ${isInRange}`);
         return isInRange;
       }) || [],
       screenouts: data.screenouts?.filter((item: any) => {
-        const itemDate = new Date(item.month + '-01');
+        const itemDate = parseDate(item, 'screenouts');
+        if (!itemDate) return false;
         const isInRange = itemDate >= startDate && itemDate <= endDate;
         console.log(`🔍 Screenouts item ${item.month}: ${itemDate.toISOString()} - In range: ${isInRange}`);
         return isInRange;
@@ -219,11 +226,12 @@ const NpsTracker = () => {
           console.log('📦 Using cached data for client-side filtering');
           responseData = cachedCompleteData;
         } else {
-          console.log('📦 No cached data, fetching from server');
+          console.log('📦 No cached data, fetching all data from server');
           setLoadingTracker("nps"); // Set global loading state
           
-          // Fetch time series data (without date filtering - get all data)
-          const timeSeriesResponse = await npsAPI.getTimeSeriesData({ type: 'all' }, dateRange.frequency);
+          // Always fetch all data from server (backend will return all available data)
+          console.log('🌐 Making API call to fetch all data');
+          const timeSeriesResponse = await npsAPI.getTimeSeriesData({ type: 'all' }, 'monthly');
           console.log('📈 Raw response:', timeSeriesResponse);
           
           // Log all available years and months in the response

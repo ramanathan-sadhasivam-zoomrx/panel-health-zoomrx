@@ -485,70 +485,15 @@ class NPSModel {
             
             // Filter data based on date range
             const filterDataByDateRange = (data) => {
-                let startDate, endDate;
-                
-                // Parse dateRange parameter
-                let parsedDateRange;
-                try {
-                    parsedDateRange = typeof dateRange === 'string' ? JSON.parse(dateRange) : dateRange;
-                } catch (e) {
-                    console.log('📅 Could not parse dateRange, using last 12 months as default');
-                    parsedDateRange = { type: 'last12months' };
-                }
-                
-                console.log('📅 Parsed dateRange:', parsedDateRange);
-                
-                if (parsedDateRange.type === 'all') {
-                    // Return all data without filtering
-                    console.log('📅 Returning all data without filtering');
-                    return data;
-                } else if (parsedDateRange.type === 'custom' && parsedDateRange.from && parsedDateRange.to) {
-                    // Custom date range - handle both string dates and object format
-                    if (typeof parsedDateRange.from === 'string' && typeof parsedDateRange.to === 'string') {
-                        // String format (YYYY-MM-DD)
-                        startDate = new Date(parsedDateRange.from);
-                        endDate = new Date(parsedDateRange.to);
-                    } else if (parsedDateRange.from.month && parsedDateRange.from.year && 
-                               parsedDateRange.to.month && parsedDateRange.to.year) {
-                        // Object format ({month: 1, year: 2024})
-                        startDate = new Date(parsedDateRange.from.year, parsedDateRange.from.month - 1, 1);
-                        endDate = new Date(parsedDateRange.to.year, parsedDateRange.to.month, 0); // Last day of the month
-                    } else {
-                        console.log('📅 Invalid custom date range format, using last 12 months');
-                        // Fallback to last 12 months
-                        const currentDate = new Date();
-                        startDate = new Date();
-                        startDate.setMonth(currentDate.getMonth() - 11);
-                        startDate.setDate(1);
-                        endDate = currentDate;
-                    }
-                    
-                    console.log(`📅 Custom date range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
-                } else {
-                    // Default to last 12 months
-                    const currentDate = new Date();
-                    startDate = new Date();
-                    startDate.setMonth(currentDate.getMonth() - 11);
-                    startDate.setDate(1); // Start of month
-                    endDate = currentDate;
-                    
-                    console.log(`📅 Last 12 months range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
-                }
-                
-                const filteredData = data.filter(entry => {
-                    const entryDate = new Date(entry.year, entry.month - 1);
-                    const isInRange = entryDate >= startDate && entryDate <= endDate;
-                    console.log(`📅 Entry ${entry.year}-${entry.month}: ${entryDate.toISOString()} - In range: ${isInRange}`);
-                    return isInRange;
-                });
-                
-                console.log(`📅 Filtered ${data.length} entries to ${filteredData.length} entries`);
-                return filteredData;
+                // Always return all data - let frontend handle filtering
+                console.log('📅 Returning all data (frontend will handle filtering)');
+                return data;
             };
-            
-            const filteredOverallPDTScores = filterDataByDateRange(overallPDTScores);
-            const filteredDashboardPDTScores = filterDataByDateRange(dashboardPDTScores);
-            const filteredPostSurveyPDTScores = filterDataByDateRange(postSurveyPDTScores);
+
+            // Apply filtering to each data type
+            const overallFiltered = filterDataByDateRange(overallPDTScores);
+            const dashboardFiltered = filterDataByDateRange(dashboardPDTScores);
+            const postSurveyFiltered = filterDataByDateRange(postSurveyPDTScores);
             
             console.log('=== Calculating NPS Scores ===');
             // Calculate NPS scores
@@ -564,69 +509,31 @@ class NPSModel {
                 });
             };
 
-            const overall = calculateNPS(filteredOverallPDTScores);
-            const dashboard = calculateNPS(filteredDashboardPDTScores);
-            const postSurvey = calculateNPS(filteredPostSurveyPDTScores);
+            const overall = calculateNPS(overallFiltered);
+            const dashboard = calculateNPS(dashboardFiltered);
+            const postSurvey = calculateNPS(postSurveyFiltered);
 
             // Get completes and screenouts data for Post Survey
             const completes = postSurveyData.COMPLETE || [];
             const screenouts = postSurveyData.SCREENOUT || [];
 
+            // Debug: Log the structure of completes and screenouts
+            console.log('📊 Completes data structure:', {
+                count: completes.length,
+                sample: completes.length > 0 ? completes[0] : null,
+                allKeys: completes.length > 0 ? Object.keys(completes[0]) : []
+            });
+            console.log('📊 Screenouts data structure:', {
+                count: screenouts.length,
+                sample: screenouts.length > 0 ? screenouts[0] : null,
+                allKeys: screenouts.length > 0 ? Object.keys(screenouts[0]) : []
+            });
+
             // Filter completes and screenouts based on date range
             const filterDataByDateRangeForData = (data) => {
-                let startDate, endDate;
-                
-                // Parse dateRange parameter
-                let parsedDateRange;
-                try {
-                    parsedDateRange = typeof dateRange === 'string' ? JSON.parse(dateRange) : dateRange;
-                } catch (e) {
-                    console.log('📅 Could not parse dateRange, using last 12 months as default');
-                    parsedDateRange = { type: 'last12months' };
-                }
-                
-                if (parsedDateRange.type === 'custom' && parsedDateRange.from && parsedDateRange.to) {
-                    // Custom date range - handle both string dates and object format
-                    if (typeof parsedDateRange.from === 'string' && typeof parsedDateRange.to === 'string') {
-                        // String format (YYYY-MM-DD)
-                        startDate = new Date(parsedDateRange.from);
-                        endDate = new Date(parsedDateRange.to);
-                    } else if (parsedDateRange.from.month && parsedDateRange.from.year && 
-                               parsedDateRange.to.month && parsedDateRange.to.year) {
-                        // Object format ({month: 1, year: 2024})
-                        startDate = new Date(parsedDateRange.from.year, parsedDateRange.from.month - 1, 1);
-                        endDate = new Date(parsedDateRange.to.year, parsedDateRange.to.month, 0); // Last day of the month
-                    } else {
-                        console.log('📅 Invalid custom date range format, using last 12 months');
-                        // Fallback to last 12 months
-                        const currentDate = new Date();
-                        startDate = new Date();
-                        startDate.setMonth(currentDate.getMonth() - 11);
-                        startDate.setDate(1);
-                        endDate = currentDate;
-                    }
-                    
-                    console.log(`📅 Custom date range for completes/screenouts: ${startDate.toISOString()} to ${endDate.toISOString()}`);
-                } else {
-                    // Default to last 12 months
-                    const currentDate = new Date();
-                    startDate = new Date();
-                    startDate.setMonth(currentDate.getMonth() - 11);
-                    startDate.setDate(1); // Start of month
-                    endDate = currentDate;
-                    
-                    console.log(`📅 Last 12 months range for completes/screenouts: ${startDate.toISOString()} to ${endDate.toISOString()}`);
-                }
-                
-                const filteredData = data.filter(entry => {
-                    const entryDate = new Date(entry.month + '-01'); // entry.month is "YYYY-MM" format
-                    const isInRange = entryDate >= startDate && entryDate <= endDate;
-                    console.log(`📅 Entry ${entry.month}: ${entryDate.toISOString()} - In range: ${isInRange}`);
-                    return isInRange;
-                });
-                
-                console.log(`📅 Filtered ${data.length} completes/screenouts to ${filteredData.length} entries`);
-                return filteredData;
+                // Always return all data - let frontend handle filtering
+                console.log('📅 Returning all completes/screenouts data (frontend will handle filtering)');
+                return data;
             };
 
             const filteredCompletes = filterDataByDateRangeForData(completes);
