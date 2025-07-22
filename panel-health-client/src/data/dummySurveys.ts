@@ -2,6 +2,7 @@ export interface Survey {
   id?: number;
   surveyTitle: string;
   crmId: string;
+  crmName?: string;
   userRating: number; // raw average 1-10
   userSentiment: number; // raw average -1 to 1
   dropOffPercent: number;

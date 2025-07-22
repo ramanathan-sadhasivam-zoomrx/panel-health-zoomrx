@@ -29,7 +29,7 @@ class SurveyModel {
         SELECT DISTINCT
           s.id,
           lsl.surveyls_title as surveyTitle,
-          recent_pw.crm_element_id as crmId,
+          ce.name as crmName,
           s.status,
           s.type as survey_type,
           recent_pw.id as recent_project_wave_id,
@@ -54,7 +54,9 @@ class SurveyModel {
             s2.id as survey_id
           FROM surveys s2
           JOIN waves w2 ON s2.id = w2.survey_id AND w2.status = 1
-          JOIN users_waves uw2 ON w2.id = uw2.wave_id AND uw2.status = 1
+          JOIN users_waves uw2 ON w2.id = uw2.wave_id AND uw2.start_date IS NOT NULL
+          -- Only count attempts in the last 30 days
+          AND uw2.start_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
           JOIN users u2 ON uw2.user_id = u2.id AND u2.type = 1
           WHERE s2.active = 1
           GROUP BY s2.id
@@ -82,8 +84,9 @@ class SurveyModel {
           LEFT JOIN project_waves pw2 ON pww2.project_wave_id = pw2.id
           WHERE pw2.id IS NOT NULL
         ) recent_pw ON s.id = recent_pw.survey_id AND recent_pw.rn = 1
+        LEFT JOIN crm_elements ce ON recent_pw.crm_element_id = ce.id
         WHERE s.active = 1
-          AND s.type NOT IN (4, 7, 8, 9, 10, 11, 12, 13, 15, 16, 19)
+          AND s.type NOT IN (2,4, 7, 8, 9, 10, 11, 12, 13, 15, 16, 19)
         ORDER BY s.id DESC
       `;
       
@@ -904,6 +907,7 @@ class SurveyModel {
         LEFT JOIN project_waves pw2 ON pww2.project_wave_id = pw2.id
         WHERE pw2.id IS NOT NULL
       ) recent_pw ON s.id = recent_pw.survey_id AND recent_pw.rn = 1
+      LEFT JOIN crm_elements ce ON recent_pw.crm_element_id = ce.id
       WHERE s.id = ?
         AND s.active = 1
     `;

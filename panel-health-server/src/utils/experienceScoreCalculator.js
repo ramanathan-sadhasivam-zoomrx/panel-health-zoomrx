@@ -136,23 +136,39 @@ class ExperienceScoreCalculator {
    * @param {number} screenerQuestionCount - Number of screener questions
    * @returns {number} - Contribution score
    */
-  calculateScreenerQuestionContribution(screenerQuestionCount) {
-    // Cap the question count to prevent extreme negative scores
-    const cappedCount = Math.min(50, screenerQuestionCount);
-    
-    if (cappedCount <= 12) {
-      // 0 questions gives maximum 10% contribution, 12 gives 0%
-      // Formula: (12 - questions) / 12 * 10
-      return ((12 - cappedCount) / 12) * 10; // FIXED: Changed from 5 to 10 to match Bayesian weights
-    } else {
-      // More than 12 questions gives negative contribution (minimum -10%)
-      // For 30+ questions, we want -10% contribution
-      const excessQuestions = cappedCount - 12;
-      const maxExcessForMinScore = 18; // 30 - 12 = 18 questions to reach -10%
-      const negativeContribution = Math.min(10, (excessQuestions / maxExcessForMinScore) * 10); // FIXED: Changed from 5 to 10
-      return -negativeContribution;
+  // 
+  
+    /**
+   * Updated scoring logic for screener question count
+   * 1-3 questions: Full 10 points (maximum contribution)
+   * 4-12 questions: Linear decrease from 10 to 0 points
+   * 13+ questions: Negative points scaling to -10 (maximum penalty)
+   */
+    calculateScreenerQuestionContribution(screenerQuestionCount) {
+      let questionCountContribution = 0;
+  
+      if (screenerQuestionCount >= 1 && screenerQuestionCount <= 3) {
+        // Full points for 1-3 questions
+        questionCountContribution = 10;
+      }
+      else if (screenerQuestionCount >= 4 && screenerQuestionCount <= 12) {
+        // Linear decrease from 10 (at 4 questions) to 0 (at 12 questions)
+        // Formula: 10 - ((count - 4) / (12 - 4)) * 10
+        questionCountContribution = 10 - ((screenerQuestionCount - 4) / 8) * 10;
+      }
+      else if (screenerQuestionCount > 12) {
+        // Negative contribution for >12 questions
+        // Linear decrease to -10 at 30+ questions
+        // Formula: 0 - ((count - 12) / (30 - 12)) * 10, capped at -10
+        questionCountContribution = Math.max(-10, -((screenerQuestionCount - 12) / 18) * 10);
+      }
+      else {
+        // Edge case: 0 or negative question count
+        questionCountContribution = 0;
+      }
+  
+      return questionCountContribution;
     }
-  }
 
   /**
    * Calculate Bayesian XScore with smoothing for low response volumes (SILENT VERSION)
@@ -272,16 +288,18 @@ class ExperienceScoreCalculator {
     const norm_screenout = 1 - (screenout_rate / 100); // invert: lower screenout is better
     
     // Screener normalization (fewer questions = better) (EXACT REQUIREMENT)
-    const norm_screener = ((maxScreenerQuestionCount - screenerQuestionCount) / 
-                           (maxScreenerQuestionCount - minScreenerQuestionCount));
+    // const norm_screener = ((maxScreenerQuestionCount - screenerQuestionCount) / 
+    //                        (maxScreenerQuestionCount - minScreenerQuestionCount));
 
+    const screenerContributionRaw = this.calculateScreenerQuestionContribution(screenerQuestionCount);
+    const norm_screener =Number(screenerContributionRaw)/100;
     // Step 5: Apply weights (EXACT REQUIREMENT)
     const Xscore_raw = (
       0.35 * norm_rating + 
       0.25 * norm_sentiment + 
       0.15 * norm_dropoff + 
       0.15 * norm_screenout + 
-      0.10 * norm_screener
+       norm_screener
     );
 
     // Step 6: Scale to 0–100 (EXACT REQUIREMENT)
@@ -340,7 +358,7 @@ class ExperienceScoreCalculator {
         },
         screenerQuestionCount: {
           value: screenerQuestionCount,
-          contribution: 0.10 * norm_screener * 100,
+          contribution: screenerContributionRaw,
           weight: 10
         }
       },

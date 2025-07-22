@@ -78,7 +78,7 @@ export function SurveyCard({ survey, expanded, onExpand, cardWidth, style }: Sur
                   </a>
                 )}
               </div>
-              <CardDescription>CRM ID: {crmId}</CardDescription>
+              <CardDescription>CRM: {survey.crmName || crmId}</CardDescription>
             </div>
             <div className="flex flex-col justify-center items-end">
               <p className="text-2xl font-bold">{typeof uxScore === 'number' ? uxScore.toFixed(1) : '0.0'}</p>
