@@ -87,7 +87,7 @@ class SurveyModel {
         ) recent_pw ON s.id = recent_pw.survey_id AND recent_pw.rn = 1
         LEFT JOIN crm_elements ce ON recent_pw.crm_element_id = ce.id
         WHERE s.active = 1
-          AND s.type NOT IN (2,4, 7, 8, 9, 10, 11, 12, 13, 15, 16, 19)
+          AND s.type NOT IN (2,3,4, 7, 8, 9, 10, 11, 12, 13,14, 15, 16, 19)
         ORDER BY s.id DESC
       `;
       
