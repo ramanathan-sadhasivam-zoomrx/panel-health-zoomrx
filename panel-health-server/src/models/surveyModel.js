@@ -47,6 +47,7 @@ class SurveyModel {
             AND all_q.parent_qid = 0
             AND screener_q.archived = 0
             AND all_q.archived = 0
+            AND all_q.type != '*'
         ) screener_surveys ON s.id = screener_surveys.sid
         INNER JOIN (
           -- Subquery to get only surveys with at least 5 panelist completes
@@ -135,6 +136,7 @@ class SurveyModel {
                 AND all_q.parent_qid = 0
                 AND screener_q.archived = 0
                 AND all_q.archived = 0
+                AND all_q.type != '*'
             GROUP BY all_q.sid, all_q.gid
         ) group_data ON s.id = group_data.sid
         WHERE s.active = 1
@@ -1125,6 +1127,7 @@ class SurveyModel {
               AND all_q.parent_qid = 0
               AND screener_q.archived = 0
               AND all_q.archived = 0
+              AND all_q.type != '*'
           GROUP BY all_q.sid, all_q.gid
       ) group_data ON s.id = group_data.sid
       WHERE s.id = ?
