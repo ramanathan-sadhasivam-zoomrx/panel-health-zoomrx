@@ -150,34 +150,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     console.log('🔄 AuthProvider: Auth useEffect running');
-    let isMounted = true;
+    let mounted = true;
+
+    // Initialize auth state
+    dispatch({ type: 'INITIALIZE_START' });
     
+    // Separate effect for auth check to prevent synchronization issues
     const initAuth = async () => {
-      console.log('🔄 AuthProvider: initAuth called', { isMounted });
-      if (!isMounted) {
-        console.log('🔄 AuthProvider: initAuth skipped - not mounted');
-        return;
-      }
-      
       try {
-        console.log('🔄 AuthProvider: Setting loading to true');
-        dispatch({ type: 'INITIALIZE_START' });
-        await checkAuth();
+        if (!mounted) return;
+        
+        const isAuthenticated = await checkAuth();
+        console.log('🔄 AuthProvider: Auth check result:', { isAuthenticated });
+        
+        if (!mounted) return;
+        
+        // No need to dispatch here as checkAuth already handles state updates
       } catch (error) {
-        console.error('🔄 AuthProvider: Error during authentication initialization:', error);
-        if (isMounted) {
+        console.error('🔄 AuthProvider: Error during auth check:', error);
+        if (mounted) {
           dispatch({ type: 'INITIALIZE_ERROR' });
         }
       }
     };
 
+    // Run auth check
     initAuth();
     
     return () => {
-      console.log('🔄 AuthProvider: Auth useEffect cleanup - setting isMounted to false');
-      isMounted = false;
+      console.log('🔄 AuthProvider: Auth useEffect cleanup');
+      mounted = false;
     };
-  }, []);
+  }, []); // Empty deps array since checkAuth is stable
 
   const value: AuthContextType = {
     user: state.user,

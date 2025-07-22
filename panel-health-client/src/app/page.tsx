@@ -49,24 +49,20 @@ export default function DashboardPage() {
   // Global loading context
   const { setLoadingTracker } = useLoading();
 
+  // Component mount effect
   useEffect(() => {
+    const mounted = { current: true };
     console.log('🔄 DashboardPage: Component mounted');
-    isMountedRef.current = true;
     return () => {
       console.log('🔄 DashboardPage: Component unmounting');
-      isMountedRef.current = false;
+      mounted.current = false;
     };
   }, []);
 
   // Check authentication
   useEffect(() => {
-    console.log('🔄 DashboardPage: Authentication useEffect running', { authLoading, isAuthenticated, isMounted: isMountedRef.current });
-    
-    // Only run if component is mounted
-    if (!isMountedRef.current) {
-      console.log('🔄 DashboardPage: Authentication useEffect skipped - not mounted');
-      return;
-    }
+    const mounted = { current: true };
+    console.log('🔄 DashboardPage: Authentication useEffect running', { authLoading, isAuthenticated });
     
     // Skip authentication check in development mode
     if (process.env.NEXT_PUBLIC_DISABLE_AUTH === 'true') {
@@ -75,7 +71,7 @@ export default function DashboardPage() {
     }
     
     // Only redirect if not loading and not authenticated
-    if (!authLoading && !isAuthenticated && isMountedRef.current) {
+    if (!authLoading && !isAuthenticated && mounted.current) {
       console.log('🔐 User not authenticated, redirecting to login');
       try {
         login();
@@ -84,9 +80,9 @@ export default function DashboardPage() {
       }
     }
     
-    // Cleanup function
     return () => {
       console.log('🔄 DashboardPage: Authentication useEffect cleanup');
+      mounted.current = false;
     };
   }, [authLoading, isAuthenticated, login]);
 

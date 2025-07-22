@@ -31,6 +31,8 @@ function AuthCallbackContent() {
   };
 
   useEffect(() => {
+    const mounted = { current: true };
+    
     const handleCallback = async () => {
       try {
         // Retrieve debug info from sessionStorage
@@ -40,6 +42,8 @@ function AuthCallbackContent() {
           debugInfo = storedDebugInfo ? JSON.parse(storedDebugInfo) : null;
         }
         console.log('🔍 Previous OAuth Debug Info:', debugInfo || 'None');
+        
+        if (!mounted.current) return;
         
         console.log('🔄 OAuth Callback Started');
         console.log('🔍 URL Search Params:', {
@@ -54,6 +58,8 @@ function AuthCallbackContent() {
         const error = searchParams.get('error');
         const errorDescription = searchParams.get('error_description');
 
+        if (!mounted.current) return;
+
         if (error) {
           console.error('❌ OAuth error:', error, errorDescription);
           setStatus('error');
@@ -67,6 +73,8 @@ function AuthCallbackContent() {
           setMessage('No authorization code received');
           return;
         }
+
+        if (!mounted.current) return;
 
         console.log('✅ OAuth callback received with code');
 
@@ -84,12 +92,8 @@ function AuthCallbackContent() {
         } else {
           console.log('🔍 SessionStorage not available (SSR)');
         }
-        
-        console.log('🔍 API Configuration:', {
-          apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
-          hasApiBaseUrl: !!process.env.NEXT_PUBLIC_API_BASE_URL,
-          normalizedBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/api$/, '') || 'http://localhost:3003'
-        });
+
+        if (!mounted.current) return;
         
         if (!codeVerifier) {
           console.error('❌ No code verifier found in sessionStorage');
@@ -156,6 +160,8 @@ function AuthCallbackContent() {
         }
 
         if (data.success) {
+          if (!mounted.current) return;
+          
           console.log('✅ Authentication successful!');
           setStatus('success');
           setMessage('Authentication successful! Redirecting...');
@@ -172,12 +178,17 @@ function AuthCallbackContent() {
             console.log('💾 User data stored in localStorage');
           }
           
+          if (!mounted.current) return;
+          
           // Update auth context
           await checkAuth();
           console.log('🔄 Auth context updated');
           
+          if (!mounted.current) return;
+          
           // Redirect to dashboard after a short delay
           setTimeout(() => {
+            if (!mounted.current) return;
             console.log('🚀 Redirecting to dashboard...');
             safeNavigate('/');
           }, 1500);
@@ -187,6 +198,7 @@ function AuthCallbackContent() {
         }
 
       } catch (error) {
+        if (!mounted.current) return;
         console.error('Callback error:', error);
         setStatus('error');
         setMessage(error instanceof Error ? error.message : 'Authentication failed');
@@ -194,6 +206,10 @@ function AuthCallbackContent() {
     };
 
     handleCallback();
+
+    return () => {
+      mounted.current = false;
+    };
   }, [searchParams, router, checkAuth]);
 
   return (
