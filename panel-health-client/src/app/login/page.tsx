@@ -4,54 +4,34 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
-// Configure console for better debugging
-const configureConsole = () => {
-  // Preserve console logs
-  console.log('🔧 Configuring console for OAuth debugging...');
-  
-  // Store original console methods
-  const originalLog = console.log;
-  const originalError = console.error;
-  
-  // Override console.log to add timestamps
-  console.log = (...args) => {
-    const timestamp = new Date().toISOString();
-    originalLog(`[${timestamp}]`, ...args);
-  };
-  
-  // Override console.error to add timestamps
-  console.error = (...args) => {
-    const timestamp = new Date().toISOString();
-    originalError(`[${timestamp}] ERROR:`, ...args);
-  };
-  
-  console.log('✅ Console configured for debugging');
-};
-
-// Call configuration on module load
-if (typeof window !== 'undefined') {
-  configureConsole();
-}
-
 // Generate PKCE code verifier and challenge
-function generatePKCE() {
-  const array = new Uint8Array(32);
-  crypto.getRandomValues(array);
-  const codeVerifier = btoa(String.fromCharCode(...array))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=/g, '');
-  
-  const encoder = new TextEncoder();
-  const data = encoder.encode(codeVerifier);
-  return crypto.subtle.digest('SHA-256', data).then(hash => {
-    const hashArray = new Uint8Array(hash);
-    const codeChallenge = btoa(String.fromCharCode(...hashArray))
+async function generatePKCE() {
+  try {
+    // Generate code verifier
+    const array = new Uint8Array(32);
+    crypto.getRandomValues(array);
+    const codeVerifier = btoa(String.fromCharCode.apply(null, [...array]))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '')
+      .substring(0, 128);
+
+    // Generate code challenge
+    const encoder = new TextEncoder();
+    const data = encoder.encode(codeVerifier);
+    const hash = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hash));
+    const hashString = hashArray.map(b => String.fromCharCode(b)).join('');
+    const codeChallenge = btoa(hashString)
       .replace(/\+/g, '-')
       .replace(/\//g, '_')
       .replace(/=/g, '');
+
     return { codeVerifier, codeChallenge };
-  });
+  } catch (error) {
+    console.error('Error generating PKCE:', error);
+    throw new Error('Failed to generate PKCE values');
+  }
 }
 
 export default function LoginPage() {
@@ -67,49 +47,64 @@ export default function LoginPage() {
       const tenantId = process.env.NEXT_PUBLIC_TENANT_ID;
       const clientId = process.env.NEXT_PUBLIC_CLIENT_ID;
       
-      // Force the correct redirect URI for staging - ALWAYS use frontend callback
-      const redirectUri = 'https://zeus-panelist-health-podb-patch-1-dev-0802230855.zoomrx.dev/auth/callback';
+      // Get the current hostname for the redirect URI
+      const hostname = typeof window !== 'undefined' ? window.location.origin : '';
+      const redirectUri = `${hostname}/auth/callback`;
 
       // Debug: Log environment variables
       console.log('🔍 OAuth Environment Variables:', {
         tenantId: tenantId ? 'Set' : 'Missing',
         clientId: clientId ? 'Set' : 'Missing',
         redirectUri,
-        hostname: typeof window !== 'undefined' ? window.location.hostname : 'server-side',
-        isStaging: typeof window !== 'undefined' && window.location.hostname.includes('zoomrx.dev'),
+        hostname,
+        isStaging: hostname.includes('zoomrx.dev'),
         envRedirectUri: process.env.NEXT_PUBLIC_REDIRECT_URI
       });
 
       if (!tenantId || !clientId) {
-        setError('OAuth configuration is missing. Please check your environment variables.');
-        return;
+        throw new Error('OAuth configuration is missing. Please check your environment variables.');
       }
 
       // Generate PKCE values
+      console.log('🔐 Generating PKCE values...');
       const { codeVerifier, codeChallenge } = await generatePKCE();
       
-      // Store debug info in sessionStorage for debugging
+      if (!codeVerifier || !codeChallenge) {
+        throw new Error('Failed to generate PKCE values');
+      }
+
+      // Store debug info and code verifier in sessionStorage
+      if (typeof window === 'undefined' || !window.sessionStorage) {
+        throw new Error('Session storage is not available');
+      }
+
+      // Clear any existing values
+      sessionStorage.removeItem('codeVerifier');
+      sessionStorage.removeItem('oauthDebug');
+
+      // Store new values
       const debugInfo = {
         timestamp: new Date().toISOString(),
         hasCodeVerifier: !!codeVerifier,
-        codeVerifierLength: codeVerifier ? codeVerifier.length : 0,
+        codeVerifierLength: codeVerifier.length,
         hasCodeChallenge: !!codeChallenge,
-        codeChallengeLength: codeChallenge ? codeChallenge.length : 0
+        codeChallengeLength: codeChallenge.length
       };
       
-      if (typeof window !== 'undefined' && window.sessionStorage) {
-        sessionStorage.setItem('oauthDebug', JSON.stringify(debugInfo));
-        console.log('🔐 PKCE Generated:', debugInfo);
-        
-        // Store code verifier in sessionStorage
-        sessionStorage.setItem('codeVerifier', codeVerifier);
-        
-        console.log('💾 Code verifier stored in sessionStorage');
-        console.log('🔍 SessionStorage check:', {
-          storedCodeVerifier: sessionStorage.getItem('codeVerifier') ? 'Present' : 'Missing',
-          sessionStorageLength: sessionStorage.length
-        });
+      sessionStorage.setItem('oauthDebug', JSON.stringify(debugInfo));
+      sessionStorage.setItem('codeVerifier', codeVerifier);
+      
+      // Verify storage
+      const storedVerifier = sessionStorage.getItem('codeVerifier');
+      if (!storedVerifier) {
+        throw new Error('Failed to store code verifier in session storage');
       }
+
+      console.log('💾 PKCE values stored:', {
+        debugInfo,
+        storedVerifier: storedVerifier ? 'Present' : 'Missing',
+        verifierLength: storedVerifier?.length
+      });
       
       // Build authorization URL
       const authUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize?` +
@@ -118,23 +113,20 @@ export default function LoginPage() {
         `&redirect_uri=${encodeURIComponent(redirectUri)}` +
         `&scope=openid profile email` +
         `&code_challenge=${codeChallenge}` +
-        `&code_challenge_method=S256`;
+        `&code_challenge_method=S256` +
+        `&response_mode=query`;
       
-      console.log('🌐 OAuth Configuration:', {
-        tenantId: tenantId ? 'Set' : 'Missing',
-        clientId: clientId ? 'Set' : 'Missing',
-        redirectUri,
-        authUrl: authUrl.substring(0, 100) + '...'
+      console.log('🚀 Redirecting to Microsoft OAuth:', {
+        url: authUrl.substring(0, 100) + '...',
+        hasCodeChallenge: !!codeChallenge,
+        challengeLength: codeChallenge.length
       });
-      
-      console.log('🚀 Redirecting to Microsoft OAuth...');
       
       // Redirect to Microsoft OAuth
       window.location.href = authUrl;
     } catch (error) {
       console.error('Login error:', error);
-      setError('Failed to initiate login. Please try again.');
-    } finally {
+      setError(error instanceof Error ? error.message : 'Failed to initiate login. Please try again.');
       setIsLoading(false);
     }
   };
