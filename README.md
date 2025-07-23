@@ -1,78 +1,58 @@
-# Panel Health Dashboard - ZoomRx
+# Setup & Deployment Instructions
 
-A survey experience tracking dashboard for ZoomRx panel health management.
+## 1. Clone the Repository
 
-## 🚀 Quick Start
-
-### Prerequisites
-- Node.js 18+ 
-- MySQL 8.0+
-
-### Installation
-
-1. **Clone and setup**
-   ```bash
-   git clone <repository-url>
-   cd panel-health-zoomrx
-   ```
-
-2. **Backend Setup**
-   ```bash
-   cd panel-health-server
-   npm install
-   cp env.example .env
-   # Configure database credentials in .env
-   npm start
-   ```
-
-3. **Frontend Setup**
-   ```bash
-   cd panel-health-client
-   npm install
-   npm run dev
-   ```
-
-4. **Access**
-   - Frontend: http://localhost:3000
-   - Backend: http://localhost:3003
-
-## 📊 Features
-
-- **Survey Experience Tracker**: Top 5 and Lowest 5 surveys
-- **NPS Tracker**: Trend analysis and metrics
-- **Experience Score**: Multi-factor scoring system
-- **Real-time Data**: Live survey performance metrics
-
-## 🛠️ Tech Stack
-
-- **Frontend**: Next.js, React, TypeScript, Tailwind CSS
-- **Backend**: Node.js, Express, MySQL
-- **Charts**: Recharts
-- **UI**: shadcn/ui components
-
-## 📈 Experience Score Formula
-
-```
-Score = (User Rating × 35%) + (Sentiment × 25%) + (Drop-off × 20%) + (Screen-out × 15%) + (Screener × 5%)
+```sh
+git clone <your-repository-url>
+cd panel-health-zoomrx
 ```
 
-## 🔧 Environment Variables
+## 2. Environment Variables
 
-```env
-DB_HOST=localhost
-DB_USER=your_username
-DB_PASSWORD=your_password
-DB_NAME=your_database
-JWT_SECRET=your_jwt_secret
-PORT=3003
+### A. Client (`.env` in `panel-health-client/`)
+Create or update `panel-health-client/.env`
+
+### B. Server (`.env` in `panel-health-server/`)
+Create or update `panel-health-server/.env`
+
+## 3. Install Dependencies
+
+### A. Client
+```sh
+cd panel-health-client
+npm install
 ```
 
-## 📝 API Endpoints
+### B. Server
+```sh
+cd ../panel-health-server
+npm install
+```
 
-- `GET /api/surveys` - All surveys with experience scores
-- `GET /api/nps` - NPS data and trends
-- `GET /health` - Health check
+## 4. Build the Client
 
----
+```sh
+cd ../panel-health-client
+npm run build
+```
 
-**Built for ZoomRx Panel Health Management** 
+## 5. Start Applications with PM2
+
+### A. Start Backend
+```sh
+cd ../panel-health-server
+pm2 start src/server.js --name "panel-health-backend" --env production
+```
+
+### B. Start Frontend
+```sh
+cd ../panel-health-client
+pm2 start npm --name "panel-health-frontend" -- start
+```
+
+## 6. Configure PM2 for Auto-Start
+
+```sh
+pm2 save
+pm2 startup
+``` 
