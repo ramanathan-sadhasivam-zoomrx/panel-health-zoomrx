@@ -44,6 +44,9 @@ export function SurveyCard({ survey, expanded, onExpand, cardWidth, style }: Sur
     bayesianMetrics,
   } = survey;
 
+  // Ensure qualitativeComments is always an array
+  const safeQualitativeComments = Array.isArray(qualitativeComments) ? qualitativeComments : [];
+
   // Use backend values for display - no frontend calculations
   const displayUserRating = survey.breakdown?.userRating?.value || userRating;
   const displayUserSentiment = survey.breakdown?.userSentiment?.value || userSentiment;
@@ -125,11 +128,11 @@ export function SurveyCard({ survey, expanded, onExpand, cardWidth, style }: Sur
                   </div>
                 </div>
               </div>
-              {qualitativeComments && qualitativeComments.length > 0 && (
+              {safeQualitativeComments && safeQualitativeComments.length > 0 && (
                 <div>
                   <h3 className="font-semibold mb-2">Qualitative Comments</h3>
                   <div className="space-y-1">
-                    {qualitativeComments.map((comment, index) => (
+                    {safeQualitativeComments.map((comment, index) => (
                       <QualitativeComment
                         key={index}
                         comment={comment}
