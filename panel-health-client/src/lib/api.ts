@@ -78,7 +78,6 @@ export const npsAPI = {
     return handleResponse(response);
   },
 
-
 };
 
 // Survey API

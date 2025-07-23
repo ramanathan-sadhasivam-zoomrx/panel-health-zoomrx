@@ -7,8 +7,6 @@ import { useAuth } from '@/contexts/AuthContext';
 // Configure console for better debugging
 const configureConsole = () => {
   // Preserve console logs
-  console.log('🔧 Configuring console for OAuth debugging...');
-  
   // Store original console methods
   const originalLog = console.log;
   const originalError = console.error;
@@ -24,8 +22,6 @@ const configureConsole = () => {
     const timestamp = new Date().toISOString();
     originalError(`[${timestamp}] ERROR:`, ...args);
   };
-  
-  console.log('✅ Console configured for debugging');
 };
 
 // Call configuration on module load
@@ -98,13 +94,8 @@ export default function LoginPage() {
       };
       
       sessionStorage.setItem('oauthDebug', JSON.stringify(debugInfo));
-      
-      console.log('🔐 PKCE Generated:', debugInfo);
-      
       // Store code verifier in sessionStorage
       sessionStorage.setItem('codeVerifier', codeVerifier);
-      
-      console.log('💾 Code verifier stored in sessionStorage');
       console.log('🔍 SessionStorage check:', {
         storedCodeVerifier: sessionStorage.getItem('codeVerifier') ? 'Present' : 'Missing',
         sessionStorageLength: sessionStorage.length
@@ -125,9 +116,6 @@ export default function LoginPage() {
         redirectUri,
         authUrl: authUrl.substring(0, 100) + '...'
       });
-      
-      console.log('🚀 Redirecting to Microsoft OAuth...');
-      
       // Redirect to Microsoft OAuth
       window.location.href = authUrl;
     } catch (error) {

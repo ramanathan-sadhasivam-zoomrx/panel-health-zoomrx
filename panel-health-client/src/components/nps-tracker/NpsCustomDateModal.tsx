@@ -33,7 +33,7 @@ const NpsCustomDateModal = ({ open, setOpen, dateRange, setDateRange, npsData = 
     if (npsData && npsData.length > 0) {
       const years = [...new Set(npsData.map(item => item.year))].sort();
       setAvailableYears(years);
-      console.log('📅 Available years from data:', years);
+
     } else {
       // Fallback to current year and previous year if no data
       const currentYear = new Date().getFullYear();
@@ -95,9 +95,6 @@ const NpsCustomDateModal = ({ open, setOpen, dateRange, setDateRange, npsData = 
       };
     }
 
-    console.log('🔄 Setting date range with frequency:', frequency);
-    console.log('📅 New date range:', newDateRange);
-    
     setDateRange(newDateRange);
     setOpen(false);
   };
@@ -106,7 +103,7 @@ const NpsCustomDateModal = ({ open, setOpen, dateRange, setDateRange, npsData = 
   const isFormValid = fromPeriod && fromYear && toPeriod && toYear;
 
   const handleFrequencyChange = (newFrequency: string) => {
-    console.log('🔄 Frequency changed from', frequency, 'to', newFrequency);
+
     setFrequency(newFrequency);
     // Reset period selections when frequency changes
     setFromPeriod("");

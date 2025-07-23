@@ -56,17 +56,16 @@ const NpsTracker = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-
   // Global loading context
   const { setLoadingTracker } = useLoading();
 
   // Auto-refresh cache function (called when cache expires)
   const refreshCache = async () => {
-    console.log('🔄 Auto-refreshing cache');
+
     try {
       // Clear client-side cache to force fresh fetch
       setCachedCompleteData(null);
-      console.log('🔄 Client cache cleared for auto-refresh');
+
     } catch (error) {
       console.error('Error auto-refreshing cache:', error);
     }
@@ -87,7 +86,7 @@ const NpsTracker = () => {
         const cacheExpiry = 10 * 60 * 1000; // 10 minutes
         
         if (cacheAge > cacheExpiry) {
-          console.log('⏰ Cache expired, triggering auto-refresh');
+
           if (isMounted) {
             refreshCache();
           }
@@ -114,8 +113,6 @@ const NpsTracker = () => {
   const filterDataByDateRange = (data: any, dateRange: any) => {
     if (!data || !dateRange) return data;
 
-    console.log('🔍 Client-side filtering for date range:', dateRange);
-
     let startDate, endDate;
 
     // Parse date range
@@ -126,7 +123,7 @@ const NpsTracker = () => {
         endDate = new Date(dateRange.to.year, dateRange.to.month, 0); // Last day of the month
         console.log(`🔍 Custom date range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
       } else {
-        console.log('🔍 Invalid custom date range format');
+
         return data;
       }
     } else if (dateRange.type === 'last12months') {
@@ -139,7 +136,7 @@ const NpsTracker = () => {
       console.log(`🔍 Last 12 months range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
     } else {
       // Default to all data
-      console.log('🔍 No specific date range, returning all data');
+
       return data;
     }
 
@@ -198,14 +195,6 @@ const NpsTracker = () => {
       }) || []
     };
 
-    console.log('🔍 Filtered data counts:', {
-      overall: filteredData.overall.length,
-      dashboard: filteredData.dashboard.length,
-      postSurvey: filteredData.postSurvey.length,
-      completes: filteredData.completes.length,
-      screenouts: filteredData.screenouts.length
-    });
-
     return filteredData;
   };
 
@@ -216,31 +205,26 @@ const NpsTracker = () => {
         setIsLoading(true);
         setError(null);
 
-        console.log('🔄 Processing NPS data with dateRange:', dateRange);
-        console.log('📊 Frequency:', dateRange.frequency);
-
         let responseData;
 
         // Check if we have cached data
         if (cachedCompleteData) {
-          console.log('📦 Using cached data for client-side filtering');
+
           responseData = cachedCompleteData;
         } else {
-          console.log('📦 No cached data, fetching all data from server');
+
           setLoadingTracker("nps"); // Set global loading state
           
           // Always fetch all data from server (backend will return all available data)
-          console.log('🌐 Making API call to fetch all data');
+
           const timeSeriesResponse = await npsAPI.getTimeSeriesData({ type: 'all' }, 'monthly');
-          console.log('📈 Raw response:', timeSeriesResponse);
-          
+
           // Log all available years and months in the response
           if (timeSeriesResponse?.overall) {
             const allYears = [...new Set(timeSeriesResponse.overall.map((item: any) => item.year))].sort();
-            console.log('📈 Available years in response:', allYears);
-            
+
             const allMonths = timeSeriesResponse.overall.map((item: any) => `${item.year}-${item.month}`).sort();
-            console.log('📈 Available months in response:', allMonths);
+
           }
           
           responseData = timeSeriesResponse || {};
@@ -253,15 +237,7 @@ const NpsTracker = () => {
           setCachedCompleteData(cachedData);
           console.log('📦 Cached complete dataset (will auto-refresh in 10 minutes)');
         }
-        
-        console.log('📈 Response structure:', {
-          overall: responseData.overall?.length || 0,
-          dashboard: responseData.dashboard?.length || 0,
-          postSurvey: responseData.postSurvey?.length || 0,
-          completes: responseData.completes?.length || 0,
-          screenouts: responseData.screenouts?.length || 0
-        });
-        
+
         // Filter data based on current date range
         const filteredData = filterDataByDateRange(responseData, dateRange);
         
@@ -270,7 +246,7 @@ const NpsTracker = () => {
         
         // Use overall data for the main chart
         const chartData = filteredData.overall || [];
-        console.log('📈 Chart data length:', chartData.length);
+
         console.log('📈 First few chart data points:', chartData.slice(0, 3));
         console.log('📈 Last few chart data points:', chartData.slice(-3));
         console.log('📈 All chart data dates:', chartData.map((item: NpsDataItem) => `${item.year}-${item.month}`));
@@ -280,8 +256,7 @@ const NpsTracker = () => {
         // Calculate summary data from the COMPLETE dataset (not filtered)
         // This ensures summary cards always show current, previous, and best NPS regardless of date range
         const completeOverallData = responseData.overall || [];
-        console.log('📊 Complete overall data for summary calculation:', completeOverallData.length, 'entries');
-        
+
         // Sort complete data by date (newest first) for summary calculation
         const sortedCompleteData = [...completeOverallData].sort((a: NpsDataItem, b: NpsDataItem) => {
           if (a.year !== b.year) return b.year - a.year; // Newest year first
@@ -306,7 +281,7 @@ const NpsTracker = () => {
         const fiscalYearEnd = fiscalYearStart + 1;
         
         console.log(`📅 Current date: ${currentDate.toISOString()}`);
-        console.log(`📅 Current month: ${currentMonthNum}`);
+
         console.log(`📅 Fiscal year: ${fiscalYearStart}-${fiscalYearEnd} (Oct ${fiscalYearStart} - Sep ${fiscalYearEnd})`);
         
         // Filter data for current fiscal year (using complete data)
@@ -326,23 +301,20 @@ const NpsTracker = () => {
           }
           
           const isInFiscalYear = itemFiscalYear === fiscalYearEnd;
-          console.log(`📅 Item ${item.year}-${item.month}: fiscal year ${itemFiscalYear}, in current fiscal year: ${isInFiscalYear}`);
+
           return isInFiscalYear;
         });
-        
-        console.log(`📅 Fiscal year data points: ${fiscalYearData.length}`);
+
         console.log(`📅 Fiscal year data:`, fiscalYearData.map((item: NpsDataItem) => `${item.year}-${item.month}: ${item.nps_score}`));
         
         // Find best NPS in current fiscal year (from complete data)
         const bestMonth = fiscalYearData.length > 0 
           ? fiscalYearData.reduce((best: NpsDataItem, current: NpsDataItem) => {
-              console.log(`📅 Comparing ${current.year}-${current.month}: ${current.nps_score} vs ${best.year}-${best.month}: ${best.nps_score}`);
+
               return current.nps_score > best.nps_score ? current : best;
             }, fiscalYearData[0])
           : sortedCompleteData[0] || {} as NpsDataItem;
-        
-        console.log(`📅 Best month selected: ${bestMonth.year}-${bestMonth.month}: ${bestMonth.nps_score}`);
-        
+
         const processedSummaryData = {
           current: {
             month: currentMonth ? new Date(currentMonth.year, currentMonth.month - 1).toLocaleString('default', { month: 'short' }) : "Jan",
@@ -363,8 +335,7 @@ const NpsTracker = () => {
             nps: bestMonth?.nps_score || 0
           }
         };
-        
-        console.log('📊 Processed summary data:', processedSummaryData);
+
         setSummaryData(processedSummaryData);
       } catch (err: any) {
         console.error('Error fetching NPS data:', err);

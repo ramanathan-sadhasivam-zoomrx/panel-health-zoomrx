@@ -24,8 +24,7 @@ interface EnrichedSurvey extends Survey {
 }
 
 export default function DashboardPage() {
-  console.log('🔄 DashboardPage: Component rendering');
-  
+
   const { isAuthenticated, isLoading: authLoading, login } = useAuth();
   const [filter, setFilter] = useState("top5");
   const [isLoading, setIsLoading] = useState(false);
@@ -40,7 +39,7 @@ export default function DashboardPage() {
   
   // Handle filter change with state reset
   const handleFilterChange = (newFilter: string) => {
-    console.log(`🔄 FILTER CHANGING: ${filter} → ${newFilter}`);
+
     setFilter(newFilter);
     // Reset expanded state when filter changes to prevent stale data
     setExpanded(null);
@@ -52,37 +51,28 @@ export default function DashboardPage() {
   // --- MOVE ALL HOOKS ABOVE ANY RETURN STATEMENTS ---
 
   useEffect(() => {
-    console.log('🔄 DashboardPage: Component mounted');
     isMountedRef.current = true;
     return () => {
-      console.log('🔄 DashboardPage: Component unmounting');
       isMountedRef.current = false;
     };
   }, []);
 
   useEffect(() => {
-    console.log('🔄 DashboardPage: Authentication useEffect running', { authLoading, isAuthenticated, isMounted: isMountedRef.current });
     if (!isMountedRef.current) {
-      console.log('🔄 DashboardPage: Authentication useEffect skipped - not mounted');
       return;
     }
     if (process.env.NEXT_PUBLIC_DISABLE_AUTH === 'true') {
-      console.log('🔧 Development mode: Skipping authentication check');
       return;
     }
     if (!authLoading && !isAuthenticated && isMountedRef.current) {
-      console.log('🔐 User not authenticated, redirecting to login');
       login();
     }
     return () => {
-      console.log('🔄 DashboardPage: Authentication useEffect cleanup');
     };
   }, [authLoading, isAuthenticated, login]);
 
   useEffect(() => {
-    console.log('🔄 DashboardPage: Survey fetching useEffect running', { isMounted: isMountedRef.current });
     if (!isMountedRef.current) {
-      console.log('🔄 DashboardPage: Survey fetching useEffect skipped - not mounted');
       return;
     }
     let timeoutId: NodeJS.Timeout | null = null;
@@ -98,28 +88,21 @@ export default function DashboardPage() {
         try {
           const healthResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/surveys/health`);
           const healthData = await healthResponse.json();
-          console.log('✅ FRONTEND: Backend health check successful:', healthData);
         } catch (healthError) {
           console.error('❌ FRONTEND: Backend health check failed:', healthError);
           throw new Error('Backend server is not reachable');
         }
-        console.log('🌐 FRONTEND: Making API call to getAllSurveys...');
         let surveyData: Survey[] = [];
         try {
           controller = new AbortController();
           timeoutId = setTimeout(() => controller!.abort(), 300000);
-          console.log('⏱️ FRONTEND: Starting API call with 5-minute timeout (optimized processing)...');
           const response = await surveyAPI.getAllSurveys();
           if (timeoutId) {
             clearTimeout(timeoutId);
             timeoutId = null;
           }
-          console.log('⏱️ FRONTEND: API call completed within timeout');
-          console.log('📥 FRONTEND: API response received:', response);
           // Use a more specific type if possible
           surveyData = (response as { data?: Survey[] }).data || [];
-          console.log('📊 FRONTEND: Survey data extracted:', surveyData.length, 'surveys');
-          console.log('📊 FRONTEND: Processing complete dataset for accurate Bayesian analysis');
           if (isMountedRef.current) {
             setSurveys(surveyData);
           }
@@ -132,45 +115,8 @@ export default function DashboardPage() {
           throw apiError;
         }
         if (surveyData.length > 0) {
-          // Debug: Check survey data structure
-          if (surveyData.length > 0) {
-            console.log('🔍 FRONTEND: Sample survey keys:', Object.keys(surveyData[0]));
-            console.log('🔍 FRONTEND: Sample survey experienceScore:', surveyData[0].experienceScore);
-            console.log('🔍 FRONTEND: Sample survey xscore:', surveyData[0].xscore);
-            console.log('🔍 FRONTEND: Sample survey userRating:', surveyData[0].userRating);
-            console.log('🔍 FRONTEND: Sample survey userSentiment:', surveyData[0].userSentiment);
-            
-            // SPECIFIC DEBUGGING FOR CRM ID 1187 MISMATCH
-            console.log('\n🔍 FRONTEND: DEBUGGING CRM ID 1187 MISMATCH:');
-            console.log('='.repeat(50));
-            
-            // Find all surveys with CRM ID 1187
-            const crmId1187Surveys = surveyData.filter(s => s.crmId == '1187');
-            console.log(`🔍 FRONTEND: Found ${crmId1187Surveys.length} surveys with CRM ID 1187:`);
-            
-            (crmId1187Surveys as EnrichedSurvey[]).forEach((survey, index) => {
-            console.log(`  ${index + 1}. Survey ID: ${survey.id}`);
-            console.log(`     - Title: ${survey.surveyTitle}`);
-            console.log(`     - XScore: ${survey.xscore}`);
-            console.log(`     - Legacy Score: ${survey.experienceScore}`);
-            console.log(`     - User Rating: ${survey.userRating}`);
-            console.log(`     - User Sentiment: ${survey.userSentiment}`);
-            console.log(`     - Dropoff: ${survey.dropOffPercent}%`);
-            console.log(`     - Screenout: ${survey.screenOutPercent}%`);
-            if (survey.breakdown) {
-              console.log(`     - Breakdown: Rating=${survey.breakdown.userRating?.value}, Sentiment=${survey.breakdown.userSentiment?.value}`);
-            }
-            console.log('');
-          });
-            
-            // Check first 3 surveys in API response order
-            console.log('\n🔍 FRONTEND: FIRST 3 SURVEYS IN API RESPONSE ORDER:');
-            surveyData.slice(0, 3).forEach((survey, index) => {
-              console.log(`  ${index + 1}. Survey ID: ${survey.id} | CRM ID: ${survey.crmId} | XScore: ${survey.xscore} | Title: ${survey.surveyTitle?.substring(0, 50)}...`);
-            });
-            
-            console.log('='.repeat(50));
-          }
+          // Find all surveys with CRM ID 1187
+          const crmId1187Surveys = surveyData.filter(s => s.crmId == '1187');
         }
       } catch (err: unknown) {
         console.error('Error fetching surveys:', err);
@@ -244,15 +190,9 @@ export default function DashboardPage() {
     );
     
     if (valid.length === 0) {
-      console.log('🚨 FRONTEND: NO VALID SURVEYS FOUND!');
-      console.log('First 3 processed surveys:');
+
       processedSurveys.slice(0, 3).forEach((s: EnrichedSurvey, i: number) => {
-        console.log(`  Survey ${i + 1}:`, {
-          id: s.id,
-          uxScore: s.uxScore,
-          xscore: s.xscore,
-          experienceScore: s.experienceScore
-        });
+
       });
     }
     
@@ -275,11 +215,8 @@ export default function DashboardPage() {
   }, [enrichedSurveys]);
 
   useEffect(() => {
-    console.log('🔄 DashboardPage: Top 5 useEffect running', { isMounted: isMountedRef.current, validSurveysLength: validSurveys.length });
-    
     // Only run if component is mounted
     if (!isMountedRef.current) {
-      console.log('🔄 DashboardPage: Top 5 useEffect skipped - not mounted');
       return;
     }
     
@@ -298,24 +235,16 @@ export default function DashboardPage() {
       if (!seen.has(key)) {
         seen.add(key);
         unique.push(survey);
-        console.log(`✅ ADDED TO TOP 5: Survey ID ${survey.id} | CRM ${survey.crmId} - ${survey.surveyTitle} (${survey.uxScore.toFixed(2)})`);
-      } else {
-        console.log(`🚫 DUPLICATE SKIPPED: Survey ID ${survey.id} | CRM ${survey.crmId} - ${survey.surveyTitle} (${survey.uxScore.toFixed(2)})`);
       }
     }
-    
-    console.log('🏆 TOP 5 SURVEYS CALCULATED:', unique.length);
     if (isMountedRef.current) {
       setTop5Surveys(unique);
     }
   }, [validSurveys]);
 
   useEffect(() => {
-    console.log('🔄 DashboardPage: Lowest 5 useEffect running', { isMounted: isMountedRef.current, validSurveysLength: validSurveys.length });
-    
     // Only run if component is mounted
     if (!isMountedRef.current) {
-      console.log('🔄 DashboardPage: Lowest 5 useEffect skipped - not mounted');
       return;
     }
     
@@ -334,13 +263,8 @@ export default function DashboardPage() {
       if (!seen.has(key)) {
         seen.add(key);
         unique.push(survey);
-        console.log(`✅ ADDED TO LOWEST 5: Survey ID ${survey.id} | CRM ${survey.crmId} - ${survey.surveyTitle} (${survey.uxScore.toFixed(2)})`);
-      } else {
-        console.log(`🚫 DUPLICATE SKIPPED: Survey ID ${survey.id} | CRM ${survey.crmId} - ${survey.surveyTitle} (${survey.uxScore.toFixed(2)})`);
       }
     }
-    
-    console.log('📉 LOWEST 5 SURVEYS CALCULATED:', unique.length);
     if (isMountedRef.current) {
       setLowest5Surveys(unique);
     }
@@ -352,7 +276,7 @@ export default function DashboardPage() {
     console.log('='.repeat(80));
     
     // Console logging for top 5 surveys
-    console.log('🏆 TOP 5 SURVEYS:');
+
     let totalUXScore = 0;
     let bayesianCount = 0;
     top5Surveys.forEach((survey, index) => {
@@ -363,7 +287,7 @@ export default function DashboardPage() {
       // SPECIFIC DEBUGGING FOR CRM ID 1187
       if (survey.crmId === '1187' || survey.crmId === 1187) {
         console.log(`   🚨 CRM ID 1187 FOUND IN TOP 5 (Position ${index + 1}):`);
-        console.log(`      - Survey ID: ${survey.id}`);
+
         console.log(`      - Frontend UX Score: ${survey.uxScore.toFixed(2)}`);
         console.log(`      - Backend XScore: ${survey.xscore?.toFixed(2) || 'N/A'}`);
         console.log(`      - User Rating (Frontend): ${survey.userRating}`);
@@ -371,12 +295,7 @@ export default function DashboardPage() {
         console.log(`      - Dropoff % (Frontend): ${survey.dropOffPercent}`);
         console.log(`      - Screenout % (Frontend): ${survey.screenOutPercent}`);
         if (survey.breakdown) {
-          console.log(`      - Backend Breakdown Rating Value: ${survey.breakdown.userRating?.value}`);
-          console.log(`      - Backend Breakdown Sentiment Value: ${survey.breakdown.userSentiment?.value}`);
-          console.log(`      - Backend Breakdown Rating Contribution: ${survey.breakdown.userRating?.contribution}`);
-          console.log(`      - Backend Breakdown Sentiment Contribution: ${survey.breakdown.userSentiment?.contribution}`);
-          console.log(`      - Backend Breakdown Dropoff Contribution: ${survey.breakdown.dropoffRate?.contribution}`);
-          console.log(`      - Backend Breakdown Screenout Contribution: ${survey.breakdown.screenoutRate?.contribution}`);
+
         }
         console.log(`      - Frontend Contributions: Rating=${survey.contributions.userRating.toFixed(2)}, Sentiment=${survey.contributions.sentiment.toFixed(2)}, Dropoff=${survey.contributions.dropoff.toFixed(2)}, Screenout=${survey.contributions.screenout.toFixed(2)}, Questions=${survey.contributions.questionCount.toFixed(2)}`);
       }
@@ -390,7 +309,7 @@ export default function DashboardPage() {
     console.log(`📊 TOP 5 SUMMARY: Average UX Score: ${(totalUXScore / top5Surveys.length).toFixed(2)} | Using Bayesian: ${bayesianCount}/${top5Surveys.length} surveys`);
     
     // Console logging for lowest 5 surveys
-    console.log('📉 LOWEST 5 SURVEYS:');
+
     lowest5Surveys.forEach((survey, index) => {
       console.log(`${index + 1}. Survey ID: ${survey.id} | CRM ID: ${survey.crmId} | Title: ${survey.surveyTitle} | UX Score: ${survey.uxScore.toFixed(2)} | Bayesian XScore: ${survey.xscore?.toFixed(2) || 'N/A'} | Legacy Score: ${survey.experienceScore?.toFixed(2) || 'N/A'}`);
       // Log contributions breakdown for each lowest survey
@@ -404,11 +323,7 @@ export default function DashboardPage() {
     // Additional debugging for the problematic survey
     const problematicSurvey = enrichedSurveys.find(s => s.crmId === '914' || s.uxScore === 25.6);
     if (problematicSurvey) {
-      console.log('🚨 PROBLEMATIC SURVEY FOUND:');
-      console.log(`  CRM ID: ${problematicSurvey.crmId}`);
-      console.log(`  Title: ${problematicSurvey.surveyTitle}`);
-      console.log(`  UX Score: ${problematicSurvey.uxScore}`);
-      console.log(`  Backend Score: ${problematicSurvey.experienceScore}`);
+
       console.log(`  Is in top5: ${top5Surveys.some(s => s.crmId === problematicSurvey.crmId)}`);
       console.log(`  Is in lowest5: ${lowest5Surveys.some(s => s.crmId === problematicSurvey.crmId)}`);
     }
@@ -419,13 +334,13 @@ export default function DashboardPage() {
     let result;
     if (filter === "top5") {
       result = top5Surveys.slice(0, 5); // Ensure exactly 5 surveys
-      console.log(`🔍 RETURNING TOP 5: ${result.length} surveys`);
+
     } else if (filter === "lowest5") {
       result = lowest5Surveys.slice(0, 5); // Ensure exactly 5 surveys
-      console.log(`🔍 RETURNING LOWEST 5: ${result.length} surveys`);
+
     } else {
       result = top5Surveys.slice(0, 5); // Default to top 5
-      console.log(`🔍 RETURNING DEFAULT TOP 5: ${result.length} surveys`);
+
     }
     
     return result;

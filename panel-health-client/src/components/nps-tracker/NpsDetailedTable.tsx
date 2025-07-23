@@ -16,8 +16,7 @@ const NpsTag = ({ value }: { value: number }) => (
 );
 
 const NpsDetailedTable = ({ dateRange, data }: NpsDetailedTableProps) => {
-  console.log('📋 Table received data:', data);
-  
+
   const isQuarterly = dateRange.frequency === 'quarterly';
   const periodLabel = isQuarterly ? 'Quarter' : 'Month';
   

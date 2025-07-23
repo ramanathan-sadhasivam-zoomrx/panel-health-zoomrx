@@ -17,8 +17,6 @@ function AuthCallbackContent() {
         // Retrieve debug info from sessionStorage
         const debugInfo = sessionStorage.getItem('oauthDebug');
         console.log('🔍 Previous OAuth Debug Info:', debugInfo ? JSON.parse(debugInfo) : 'None');
-        
-        console.log('🔄 OAuth Callback Started');
         console.log('🔍 URL Search Params:', {
           code: searchParams.get('code') ? 'Present' : 'Missing',
           error: searchParams.get('error'),
@@ -44,9 +42,6 @@ function AuthCallbackContent() {
           setMessage('No authorization code received');
           return;
         }
-
-        console.log('✅ OAuth callback received with code');
-
         // Get the code verifier from sessionStorage
         const codeVerifier = sessionStorage.getItem('codeVerifier');
         
@@ -69,9 +64,6 @@ function AuthCallbackContent() {
           setMessage('No code verifier found in session');
           return;
         }
-
-        console.log('📡 FRONTEND: Making API call to backend...');
-        
         // Fix double /api issue by normalizing the URL
         const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/api$/, '') || 'http://localhost:3003';
         const apiUrl = `${baseUrl}/api/auth/microsoft/callback`;
@@ -114,8 +106,6 @@ function AuthCallbackContent() {
         });
 
         const data = await response.json();
-        console.log('📡 FRONTEND: API Response data:', data);
-
         if (!response.ok) {
           console.error('❌ FRONTEND: API call failed:', data);
           console.error('🔍 FRONTEND: Error details:', {
@@ -128,25 +118,17 @@ function AuthCallbackContent() {
         }
 
         if (data.success) {
-          console.log('✅ Authentication successful!');
           setStatus('success');
           setMessage('Authentication successful! Redirecting...');
           
           // Clear the code verifier from sessionStorage
           sessionStorage.removeItem('codeVerifier');
-          console.log('🧹 Code verifier cleared from sessionStorage');
-          
           // Store user info in localStorage
           localStorage.setItem('user', JSON.stringify(data.user));
-          console.log('💾 User data stored in localStorage');
-          
           // Update auth context
           await checkAuth();
-          console.log('🔄 Auth context updated');
-          
           // Redirect to dashboard after a short delay
           setTimeout(() => {
-            console.log('🚀 Redirecting to dashboard...');
             router.push('/');
           }, 1500);
         } else {

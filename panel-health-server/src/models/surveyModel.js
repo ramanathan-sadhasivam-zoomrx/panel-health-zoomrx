@@ -334,16 +334,7 @@ class SurveyModel {
         database.query(screenerCountsQuery)
       ]);
 
-      // Log global averages (only for specific surveys)
-      if (surveys.some(s => s.id === 927820 || s.id === 600757)) {
-        console.log('🌍 GLOBAL AVERAGES ACROSS ALL SURVEYS:');
-        console.log('='.repeat(60));
-        console.log('🔍 DEBUG: Raw global average values:');
-        console.log('   - globalAvgRating:', globalAvgRating);
-        console.log('   - globalAvgDropoff:', globalAvgDropoff);
-        console.log('   - globalAvgScreenout:', globalAvgScreenout);
-        console.log('   - screenerCounts:', screenerCounts);
-      }
+
       
       // Helper function to safely format numbers
       const safeToFixed = (value, decimals = 2) => {
@@ -360,15 +351,7 @@ class SurveyModel {
       const maxScreenerCount = screenerCounts?.[0]?.max_screener_question_count;
       const minScreenerCount = screenerCounts?.[0]?.min_screener_question_count;
       
-      // Only log extracted values for specific surveys
-      if (surveys.some(s => s.id === 927820 || s.id === 600757)) {
-        console.log('🔍 DEBUG: Extracted global average values:');
-        console.log('   - globalAvgRatingValue:', globalAvgRatingValue);
-        console.log('   - globalAvgDropoffValue:', globalAvgDropoffValue);
-        console.log('   - globalAvgScreenoutValue:', globalAvgScreenoutValue);
-        console.log('   - maxScreenerCount:', maxScreenerCount);
-        console.log('   - minScreenerCount:', minScreenerCount);
-      }
+
       
       // Natural.js sentiment analysis function
       const analyzeSentimentWithNatural = (comments) => {
@@ -460,77 +443,14 @@ class SurveyModel {
           Math.abs(result.sentiment_score) > 0.05 // Filter out very neutral sentiments
         );
         
-        console.log('📝 SENTIMENT ANALYSIS RESULTS (Non-Empty Sentiments Only):');
-        console.log('='.repeat(80));
-        console.log(`Total comments analyzed: ${sentimentResults.length}`);
-        console.log(`Comments with significant sentiment: ${nonEmptySentiments.length}`);
-        console.log('');
-        
-        const maxToShow = Math.min(20, nonEmptySentiments.length);
-        nonEmptySentiments.slice(0, maxToShow).forEach((result, index) => {
-          const sentimentEmoji = result.sentiment_score > 0.3 ? '😊' : 
-                                result.sentiment_score > 0 ? '🙂' : 
-                                result.sentiment_score > -0.3 ? '😐' : 
-                                result.sentiment_score > -0.7 ? '😕' : '😞';
-          
-          const sentimentLabel = result.sentiment_score > 0.5 ? 'Very Positive' :
-                                result.sentiment_score > 0.2 ? 'Positive' :
-                                result.sentiment_score > 0 ? 'Slightly Positive' :
-                                result.sentiment_score > -0.2 ? 'Slightly Negative' :
-                                result.sentiment_score > -0.5 ? 'Negative' : 'Very Negative';
-          
-          console.log(`${index + 1}. ${sentimentEmoji} [${sentimentLabel}]`);
-          console.log(`   Comment: "${result.comment.substring(0, 60)}${result.comment.length > 60 ? '...' : ''}"`);
-          console.log(`   Raw Score: ${result.raw_score}, Normalized: ${result.sentiment_score.toFixed(3)}`);
-          console.log('');
-        });
-        
-        if (nonEmptySentiments.length > maxToShow) {
-          console.log(`... and ${nonEmptySentiments.length - maxToShow} more non-empty sentiments`);
-        }
-        
-        if (nonEmptySentiments.length === 0) {
-          console.log('No significant sentiments found in the comments.');
-        }
-        console.log('='.repeat(80));
+
       }
       
-      // Debug logging to see raw values
-      console.log('🔍 DEBUG - Raw query results:');
-      console.log('globalAvgRating:', globalAvgRating);
-      console.log('avgRatingsPerSurvey:', avgRatingsPerSurvey);
-      console.log('feedbackComments count:', feedbackComments?.length || 0);
-      console.log('avgSentimentsPerSurvey:', avgSentimentsPerSurvey);
-      console.log('globalAvgDropoff:', globalAvgDropoff);
-      console.log('globalAvgScreenout:', globalAvgScreenout);
-      console.log('screenerCounts:', screenerCounts);
+
       
-      // Log sample feedback comments
-      if (feedbackComments && feedbackComments.length > 0) {
-        console.log('📝 SAMPLE FEEDBACK COMMENTS (Raw from DB):');
-        console.log('-'.repeat(60));
-        const maxCommentsToShow = Math.min(10, feedbackComments.length);
-        feedbackComments.slice(0, maxCommentsToShow).forEach((item, index) => {
-          console.log(`${index + 1}. Survey ${item.survey_id}: "${item.feedback_comment?.substring(0, 80)}${item.feedback_comment?.length > 80 ? '...' : ''}"`);
-        });
-        if (feedbackComments.length > maxCommentsToShow) {
-          console.log(`... and ${feedbackComments.length - maxCommentsToShow} more comments`);
-        }
-        console.log('-'.repeat(60));
-      }
+
       
-      // Only log global averages for specific surveys
-      if (surveys.some(s => s.id === 927820 || s.id === 600757)) {
-        console.log(`📊 Global Average User Rating: ${safeToFixed(globalAvgRatingValue)}`);
-        console.log(`😊 Global Average Sentiment Score: ${safeToFixed(globalAvgSentimentValue)}`);
-        console.log(`📝 Average Ratings per Survey: ${safeToFixed(avgRatingsPerSurveyValue)}`);
-        console.log(`💬 Average Sentiments per Survey: ${safeToFixed(avgSentimentsPerSurveyValue)}`);
-        console.log(`📉 Global Average Drop-off Rate: ${safeToFixed(globalAvgDropoffValue)}%`);
-        console.log(`🚫 Global Average Screen-out Rate: ${safeToFixed(globalAvgScreenoutValue)}%`);
-        console.log(`🔢 Max Screener Question Count: ${maxScreenerCount || 'N/A'}`);
-        console.log(`🔢 Min Screener Question Count: ${minScreenerCount || 'N/A'}`);
-        console.log('='.repeat(60));
-      }
+
 
       // Combine global averages into a single object for processing
       const globalAverages = {
@@ -544,14 +464,7 @@ class SurveyModel {
         minScreenerQuestionCount: minScreenerCount || 0
       };
       
-      // Only log final global averages for specific surveys
-      if (surveys.some(s => s.id === 927820 || s.id === 600757)) {
-        console.log('🔍 DEBUG: Final global averages being passed to Bayesian calculation:');
-        console.log('   - globalAvgDropoffRate:', globalAverages.globalAvgDropoffRate);
-        console.log('   - globalAvgScreenoutRate:', globalAverages.globalAvgScreenoutRate);
-        console.log('   - maxScreenerQuestionCount:', globalAverages.maxScreenerQuestionCount);
-        console.log('   - minScreenerQuestionCount:', globalAverages.minScreenerQuestionCount);
-      }
+
 
       // Fetch all individual user ratings for Bayesian smoothing
       const individualRatingsQuery = `
@@ -603,30 +516,18 @@ class SurveyModel {
       commentsMap.get(comment.survey_id).push(comment);
     });
 
-    // Only log processing info for specific surveys
-    if (surveys.some(s => s.id === 927820 || s.id === 600757)) {
-      console.log(`🔄 Processing ${surveys.length} surveys with Bayesian smoothing...`);
-      console.log(`🌍 Global averages being used:`, globalAverages);
-      console.log(`⚡ Performance mode: ENABLED`);
-      console.log(`📦 Processing all ${surveys.length} surveys with Bayesian smoothing`);
-    }
+
     
     // Calculate optimal K value once for all surveys
     const allRatingCounts = Array.from(metricsMap.values()).map(m => m.feedback_count || 0);
     const optimalK = experienceScoreCalculator.calculateOptimalK(allRatingCounts);
     
-    // Only log K value for specific surveys
-    if (surveys.some(s => s.id === 927820 || s.id === 600757)) {
-      console.log(`🎯 Using optimal K value: ${optimalK} for all surveys`);
-    }
+
     
     // Process each survey with Bayesian smoothing
     let processedCount = 0;
     const surveysWithMetrics = await Promise.all(surveys.map(async (survey) => {
       processedCount++;
-      if (processedCount % 1000 === 0) {
-        console.log(`📊 Processed ${processedCount}/${surveysToProcess.length} surveys...`);
-      }
       const surveyMetrics = metricsMap.get(survey.id) || {};
       const surveyScreener = screenerMap.get(survey.id) || {};
       const surveyComments = commentsMap.get(survey.id) || [];
@@ -638,56 +539,7 @@ class SurveyModel {
       const userSentiments = surveyComments.length > 0 ? 
         [sentimentAnalyzer.calculateAverageSentiment(surveyComments.map(c => c.feedback_comment))] : [];
 
-      // Detailed feedback logging for survey 927820
-      if (survey.id === 927820) {
-        console.log(`\n📝 [FEEDBACK DATA COLLECTION] Survey ID: ${survey.id}`);
-        console.log(`================================================`);
-        console.log(`🔍 Raw Feedback Data:`);
-        console.log(`   - Individual ratings from ratingsMap:`, userRatings);
-        console.log(`   - Rating count: ${userRatings.length}`);
-        console.log(`   - Raw average rating: ${userRatings.length > 0 ? (userRatings.reduce((sum, rating) => sum + rating, 0) / userRatings.length).toFixed(2) : 'N/A'}`);
-        console.log(`   - Rating range: ${userRatings.length > 0 ? `${Math.min(...userRatings)} - ${Math.max(...userRatings)}` : 'N/A'}`);
-        console.log(`\n💬 Comments Data:`);
-        console.log(`   - Comments from commentsMap:`, surveyComments);
-        console.log(`   - Comment count: ${surveyComments.length}`);
-        if (surveyComments.length > 0) {
-          console.log(`   - Sample comments:`);
-          surveyComments.slice(0, 3).forEach((comment, index) => {
-            console.log(`     ${index + 1}. Rating: ${comment.feedback_rating}, Comment: "${comment.feedback_comment?.substring(0, 100)}${comment.feedback_comment?.length > 100 ? '...' : ''}"`);
-          });
-        }
-        console.log(`\n📊 Survey Metrics from Database:`);
-        console.log(`   - Average rating (from DB): ${typeof surveyMetrics.average_rating === 'number' ? surveyMetrics.average_rating.toFixed(2) : surveyMetrics.average_rating || 'N/A'}`);
-        console.log(`   - Feedback count (from DB): ${surveyMetrics.feedback_count || 'N/A'}`);
-        console.log(`   - Total users: ${surveyMetrics.total_users || 'N/A'}`);
-        console.log(`   - Completed users: ${surveyMetrics.completed_users || 'N/A'}`);
-        console.log(`   - Partial users: ${surveyMetrics.partial_users || 'N/A'}`);
-        console.log(`   - Drop-off percentage: ${typeof surveyMetrics.dropoff_percentage === 'number' ? surveyMetrics.dropoff_percentage.toFixed(2) : surveyMetrics.dropoff_percentage || 'N/A'}%`);
-        console.log(`   - Screen-out percentage: ${typeof surveyMetrics.screenout_percentage === 'number' ? surveyMetrics.screenout_percentage.toFixed(2) : surveyMetrics.screenout_percentage || 'N/A'}%`);
-        console.log(`\n🧮 Sentiment Calculation:`);
-        if (surveyComments.length > 0) {
-          console.log(`   - Processing ${surveyComments.length} comments for sentiment analysis`);
-          console.log(`   - Individual comment analysis:`);
-          
-          const individualSentiments = [];
-          surveyComments.forEach((comment, index) => {
-            const individualSentiment = sentimentAnalyzer.calculateAverageSentiment([comment.feedback_comment]);
-            individualSentiments.push(individualSentiment);
-            console.log(`     ${index + 1}. Comment: "${comment.feedback_comment?.substring(0, 80)}${comment.feedback_comment?.length > 80 ? '...' : ''}"`);
-            console.log(`        Sentiment: ${typeof individualSentiment === 'number' ? individualSentiment.toFixed(4) : individualSentiment || 'N/A'}`);
-          });
-          
-          const sentimentScore = sentimentAnalyzer.calculateAverageSentiment(surveyComments.map(c => c.feedback_comment));
-          console.log(`\n   - Final sentiment calculation:`);
-          console.log(`     Individual sentiments: [${individualSentiments.map(s => typeof s === 'number' ? s.toFixed(4) : s || 'N/A').join(', ')}]`);
-          console.log(`     Average sentiment score: ${typeof sentimentScore === 'number' ? sentimentScore.toFixed(4) : sentimentScore || 'N/A'}`);
-          console.log(`     Sentiment range: -1 (negative) to +1 (positive)`);
-          console.log(`     Interpretation: ${sentimentScore > 0.1 ? 'Positive' : sentimentScore < -0.1 ? 'Negative' : 'Neutral'}`);
-        } else {
-          console.log(`   - No comments available for sentiment analysis`);
-        }
-        console.log(`================================================\n`);
-      }
+
 
       // Prepare survey data for Bayesian calculation
       const surveyData = {
@@ -700,33 +552,9 @@ class SurveyModel {
         screenerQuestionCount: surveyScreener.total_screener_questions || 0
       };
 
-      // Log survey data preparation for survey 927820
-      if (survey.id === 927820) {
-        console.log(`\n📦 [SURVEY DATA PREPARATION] Survey ID: ${survey.id}`);
-        console.log(`================================================`);
-        console.log(`🔧 Prepared surveyData object:`);
-        console.log(`   - surveyId: ${surveyData.surveyId}`);
-        console.log(`   - userRatings: [${surveyData.userRatings.join(', ')}]`);
-        console.log(`   - userSentiments: [${surveyData.userSentiments.join(', ')}]`);
-        console.log(`   - dropoffs: ${surveyData.dropoffs}`);
-        console.log(`   - totalAttempts: ${surveyData.totalAttempts}`);
-        console.log(`   - screenouts: ${surveyData.screenouts}`);
-        console.log(`   - screenerQuestionCount: ${surveyData.screenerQuestionCount}`);
-        console.log(`\n🌍 Global averages being used:`);
-        console.log(`   - globalAvgRating: ${typeof globalAverages.globalAvgRating === 'number' ? globalAverages.globalAvgRating.toFixed(2) : globalAverages.globalAvgRating || 'N/A'}`);
-        console.log(`   - globalAvgDropoff: ${typeof globalAverages.globalAvgDropoff === 'number' ? globalAverages.globalAvgDropoff.toFixed(2) : globalAverages.globalAvgDropoff || 'N/A'}`);
-        console.log(`   - globalAvgScreenout: ${typeof globalAverages.globalAvgScreenout === 'number' ? globalAverages.globalAvgScreenout.toFixed(2) : globalAverages.globalAvgScreenout || 'N/A'}`);
-        console.log(`   - optimalK: ${optimalK}`);
-        console.log(`================================================\n`);
-      }
+
       
-      // Only log detailed data for specific surveys
-      if (survey.id === 927820 || survey.id === 600757) {
-        console.log(`🔍 SURVEY ${survey.id} DATA FOR BAYESIAN CALCULATION:`);
-        console.log(`   - Survey metrics:`, surveyMetrics);
-        console.log(`   - Survey data object:`, surveyData);
-        console.log(`   - Global averages:`, globalAverages);
-      }
+
 
       // Calculate Bayesian XScore with pre-calculated optimal K
       let bayesianResult;
@@ -806,47 +634,9 @@ class SurveyModel {
       // Ensure we have valid scores - keep legacy and Bayesian separate
       const finalUserSentiment = bayesianResult.adjustedMetrics?.adjustedSentiment || 0;
       
-      // Only log score comparison for specific surveys
-      if (survey.id === 927820 || survey.id === 600757) {
-        console.log(`🔍 Survey ${survey.id} Score Comparison:`, {
-          legacyScore: legacyExperienceScore.experienceScore,
-          bayesianScore: bayesianResult.xscore,
-          difference: (bayesianResult.xscore - legacyExperienceScore.experienceScore).toFixed(2),
-          userRating: surveyMetrics.average_rating,
-          userSentiment: finalUserSentiment,
-          dropoffRate: surveyMetrics.dropoff_percentage,
-          screenoutRate: surveyMetrics.screenout_percentage
-        });
-      }
+
       
-      // Detailed logging for specific surveys
-      if (survey.id === 927820 || survey.id === 600757) {
-        console.log(`\n🎯 [FINAL UX SCORE CALCULATION] Survey ID: ${survey.id}`);
-        console.log(`================================================`);
-        console.log(`📊 Final UX Score Components:`);
-        console.log(`   - User Rating Contribution: ${bayesianResult.breakdown?.userRating?.contribution?.toFixed(2) || 'N/A'} (weight: 35)`);
-        console.log(`   - User Sentiment Contribution: ${bayesianResult.breakdown?.userSentiment?.contribution?.toFixed(2) || 'N/A'} (weight: 25)`);
-        console.log(`   - Drop-off Rate Contribution: ${bayesianResult.breakdown?.dropoffRate?.contribution?.toFixed(2) || 'N/A'} (weight: 20)`);
-        console.log(`   - Screen-out Rate Contribution: ${bayesianResult.breakdown?.screenoutRate?.contribution?.toFixed(2) || 'N/A'} (weight: 15)`);
-        console.log(`   - Screener Questions Contribution: ${bayesianResult.breakdown?.screenerQuestionCount?.contribution?.toFixed(2) || 'N/A'} (weight: 5)`);
-        console.log(`\n🧮 Total UX Score Calculation:`);
-        const totalContributions = (bayesianResult.breakdown?.userRating?.contribution || 0) + 
-                                  (bayesianResult.breakdown?.userSentiment?.contribution || 0) + 
-                                  (bayesianResult.breakdown?.dropoffRate?.contribution || 0) + 
-                                  (bayesianResult.breakdown?.screenoutRate?.contribution || 0) + 
-                                  (bayesianResult.breakdown?.screenerQuestionCount?.contribution || 0);
-        console.log(`   - Total Contributions: ${totalContributions.toFixed(2)}`);
-        console.log(`   - Final UX Score (XScore): ${bayesianResult.xscore?.toFixed(2) || 'N/A'}`);
-        console.log(`   - Legacy Experience Score: ${legacyExperienceScore.experienceScore?.toFixed(2) || 'N/A'}`);
-        console.log(`\n📱 UI Display Values:`);
-        console.log(`   - Displayed UX Score: ${bayesianResult.xscore?.toFixed(1) || 'N/A'}`);
-        console.log(`   - User Rating Display: ${bayesianResult.breakdown?.userRating?.value?.toFixed(1) || 'N/A'}/10`);
-        console.log(`   - User Sentiment Display: ${bayesianResult.breakdown?.userSentiment?.value?.toFixed(2) || 'N/A'}`);
-        console.log(`   - Drop-off Rate Display: ${bayesianResult.breakdown?.dropoffRate?.value?.toFixed(1) || 'N/A'}%`);
-        console.log(`   - Screen-out Rate Display: ${bayesianResult.breakdown?.screenoutRate?.value?.toFixed(1) || 'N/A'}%`);
-        console.log(`   - Screener Questions Display: ${bayesianResult.breakdown?.screenerQuestionCount?.value || 'N/A'}`);
-        console.log(`================================================\n`);
-      }
+
       
       return {
         ...survey,
@@ -887,13 +677,7 @@ class SurveyModel {
       };
     }));
 
-    // Log processing summary
-    const validSurveys = surveysWithMetrics.filter(s => 
-      s.experienceScore !== null && 
-      s.experienceScore !== undefined && 
-      !isNaN(s.experienceScore)
-    );
-    console.log(`✅ Processing complete: ${validSurveys.length}/${surveysWithMetrics.length} surveys have valid scores`);
+
     
     // Analyze rating distribution to determine optimal K value
     const surveysWithRatings = surveysWithMetrics.filter(s => 
@@ -915,41 +699,29 @@ class SurveyModel {
         veryHigh: ratingCounts.filter(count => count >= 100).length
       };
       
-      console.log(`📊 RATING DISTRIBUTION ANALYSIS:`);
-      console.log(`📈 Total surveys with ratings: ${surveysWithRatings.length}`);
-      console.log(`📊 Rating count statistics:`);
-      console.log(`   - Average: ${avgRatings.toFixed(1)} ratings per survey`);
-      console.log(`   - Median: ${medianRatings} ratings per survey`);
-      console.log(`   - Range: ${minRatings} - ${maxRatings} ratings`);
-      console.log(`📊 Distribution breakdown:`);
-      console.log(`   - <5 ratings: ${distribution.low} surveys (${((distribution.low/surveysWithRatings.length)*100).toFixed(1)}%)`);
-      console.log(`   - 5-19 ratings: ${distribution.medium} surveys (${((distribution.medium/surveysWithRatings.length)*100).toFixed(1)}%)`);
-      console.log(`   - 20-99 ratings: ${distribution.high} surveys (${((distribution.high/surveysWithRatings.length)*100).toFixed(1)}%)`);
-      console.log(`   - 100+ ratings: ${distribution.veryHigh} surveys (${((distribution.veryHigh/surveysWithRatings.length)*100).toFixed(1)}%)`);
+
       
       // Recommend K value based on distribution
       let recommendedK;
       if (distribution.low > distribution.medium + distribution.high) {
         // Most surveys have <5 ratings
         recommendedK = 8;
-        console.log(`🎯 RECOMMENDED K = ${recommendedK} (Most surveys have <5 ratings)`);
+
       } else if (distribution.medium > distribution.low + distribution.high) {
         // Most surveys have 5-19 ratings
         recommendedK = 10;
-        console.log(`🎯 RECOMMENDED K = ${recommendedK} (Most surveys have 5-19 ratings)`);
+
       } else if (distribution.high > distribution.low + distribution.medium) {
         // Most surveys have 20-99 ratings
         recommendedK = 15;
-        console.log(`🎯 RECOMMENDED K = ${recommendedK} (Most surveys have 20-99 ratings)`);
+
       } else {
         // Mixed distribution, use median-based approach
         recommendedK = Math.max(8, Math.min(20, Math.round(medianRatings / 2)));
-        console.log(`🎯 RECOMMENDED K = ${recommendedK} (Mixed distribution, based on median: ${medianRatings})`);
+
       }
       
-      console.log(`📊 Current K value: 10`);
-      console.log(`📊 Recommended K value: ${recommendedK}`);
-      console.log(`📊 Difference: ${recommendedK - 10 > 0 ? '+' : ''}${recommendedK - 10}`);
+
     }
     
     // Log score distribution summary
@@ -963,23 +735,10 @@ class SurveyModel {
       const avgBayesianScore = surveysWithBothScores.reduce((sum, s) => sum + s.xscore, 0) / surveysWithBothScores.length;
       const avgDifference = avgBayesianScore - avgLegacyScore;
       
-      console.log(`📊 Score Distribution Summary:`, {
-        totalSurveys: surveysWithBothScores.length,
-        avgLegacyScore: avgLegacyScore.toFixed(2),
-        avgBayesianScore: avgBayesianScore.toFixed(2),
-        avgDifference: avgDifference.toFixed(2),
-        bayesianHigher: surveysWithBothScores.filter(s => s.xscore > s.experienceScore).length,
-        legacyHigher: surveysWithBothScores.filter(s => s.experienceScore > s.xscore).length,
-        sameScore: surveysWithBothScores.filter(s => Math.abs(s.xscore - s.experienceScore) < 0.1).length
-      });
+
     }
     
-    console.log(`📤 BACKEND: About to return ${surveysWithMetrics.length} surveys to frontend`);
-    console.log(`📊 BACKEND: Sample survey data:`, {
-      id: surveysWithMetrics[0]?.id,
-      experienceScore: surveysWithMetrics[0]?.experienceScore,
-      xscore: surveysWithMetrics[0]?.xscore
-    });
+
 
     return surveysWithMetrics;
   }

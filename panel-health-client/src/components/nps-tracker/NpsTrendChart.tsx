@@ -7,8 +7,7 @@ interface NpsTrendChartProps {
 }
 
 const NpsTrendChart = ({ dateRange, data }: NpsTrendChartProps) => {
-  console.log('📊 Chart received data:', data);
-  
+
   // Transform data to work with the new chart component
   const chartData = data.map(item => {
     // Create date string in YYYY-MM format
