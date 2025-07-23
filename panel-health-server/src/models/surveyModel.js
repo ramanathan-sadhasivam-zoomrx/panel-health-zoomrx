@@ -139,6 +139,14 @@ class SurveyModel {
                 AND screener_q.archived = 0
                 AND all_q.archived = 0
                 AND all_q.type != '*'
+                AND NOT EXISTS (
+                    SELECT 1 FROM lime_question_attributes qa2
+                    WHERE qa2.qid = screener_q.qid AND qa2.attribute = 'hidden' AND qa2.value = '1'
+                )
+                AND NOT EXISTS (
+                    SELECT 1 FROM lime_question_attributes qa3
+                    WHERE qa3.qid = all_q.qid AND qa3.attribute = 'hidden' AND qa3.value = '1'
+                )
             GROUP BY all_q.sid, all_q.gid
         ) group_data ON s.id = group_data.sid
         WHERE s.active = 1
@@ -562,39 +570,6 @@ class SurveyModel {
         // Only show detailed calculation for the first survey OR surveys that will use fallback scores
         const willNeedFallback = (!userRatings.length && !userSentiments.length) || !surveyMetrics.total_users;
         
-        if (survey.id === 640974 || survey.id === 927820 || survey.id === 600757) {
-          // Detailed logging for specific surveys
-          const K_used = optimalK;
-          const avg_rating = userRatings.length > 0 ? userRatings.reduce((sum, rating) => sum + rating, 0) / userRatings.length : globalAverages.globalAvgRating;
-          const adjusted_rating = ((userRatings.length / (userRatings.length + K_used)) * avg_rating + (K_used / (userRatings.length + K_used)) * globalAverages.globalAvgRating);
-          const normalized_user_rating = (adjusted_rating - 1) / 9;
-          const user_rating_contribution = normalized_user_rating * 35;
-          
-          console.log(`\n🔍 [DETAILED CALCULATION] Survey ID: ${survey.id}`);
-          console.log(`================================================`);
-          console.log(`📊 Input Values:`);
-          console.log(`   - K (smoothing parameter): ${K_used}`);
-          console.log(`   - Feedback count (n): ${userRatings.length}`);
-          console.log(`   - Survey average rating: ${avg_rating.toFixed(2)}`);
-          console.log(`   - Global average rating: ${typeof globalAverages.globalAvgRating === 'number' ? globalAverages.globalAvgRating.toFixed(2) : globalAverages.globalAvgRating || 'N/A'}`);
-          console.log(`\n🧮 Step-by-Step Calculation:`);
-          console.log(`   1. Weight calculation:`);
-          console.log(`      - Survey weight = n/(n+K) = ${userRatings.length}/(${userRatings.length}+${K_used}) = ${userRatings.length}/(${userRatings.length + K_used}) = ${(userRatings.length / (userRatings.length + K_used)).toFixed(4)}`);
-          console.log(`      - Global weight = K/(n+K) = ${K_used}/(${userRatings.length}+${K_used}) = ${K_used}/(${userRatings.length + K_used}) = ${(K_used / (userRatings.length + K_used)).toFixed(4)}`);
-          console.log(`\n   2. Adjusted rating calculation:`);
-          console.log(`      - Adjusted Rating = (${(userRatings.length / (userRatings.length + K_used)).toFixed(4)} × ${avg_rating.toFixed(2)}) + (${(K_used / (userRatings.length + K_used)).toFixed(4)} × ${typeof globalAverages.globalAvgRating === 'number' ? globalAverages.globalAvgRating.toFixed(2) : globalAverages.globalAvgRating || 'N/A'})`);
-          console.log(`      - Adjusted Rating = ${((userRatings.length / (userRatings.length + K_used)) * avg_rating).toFixed(4)} + ${((K_used / (userRatings.length + K_used)) * (typeof globalAverages.globalAvgRating === 'number' ? globalAverages.globalAvgRating : 0)).toFixed(4)}`);
-          console.log(`      - Adjusted Rating = ${adjusted_rating.toFixed(4)}`);
-          console.log(`\n   3. Normalization (0-1 scale):`);
-          console.log(`      - Normalized Rating = (${adjusted_rating.toFixed(4)} - 1) / 9 = ${(adjusted_rating - 1).toFixed(4)} / 9 = ${normalized_user_rating.toFixed(4)}`);
-          console.log(`\n   4. UX Score contribution:`);
-          console.log(`      - User Rating Contribution = ${normalized_user_rating.toFixed(4)} × 35 = ${user_rating_contribution.toFixed(2)}`);
-          console.log(`\n📈 Summary:`);
-          console.log(`   - Raw Survey Rating: ${avg_rating.toFixed(2)}/10`);
-          console.log(`   - After Bayesian Smoothing: ${adjusted_rating.toFixed(4)}/10`);
-          console.log(`   - UX Score Contribution: ${user_rating_contribution.toFixed(2)} points (out of 35)`);
-          console.log(`================================================\n`);
-        }
         if (processedCount === 1 || willNeedFallback) {
           bayesianResult = experienceScoreCalculator.calculateBayesianXScore(surveyData, globalAverages, optimalK);
         } else {
@@ -1048,6 +1023,14 @@ class SurveyModel {
               AND screener_q.archived = 0
               AND all_q.archived = 0
               AND all_q.type != '*'
+              AND NOT EXISTS (
+                  SELECT 1 FROM lime_question_attributes qa2
+                  WHERE qa2.qid = screener_q.qid AND qa2.attribute = 'hidden' AND qa2.value = '1'
+              )
+              AND NOT EXISTS (
+                  SELECT 1 FROM lime_question_attributes qa3
+                  WHERE qa3.qid = all_q.qid AND qa3.attribute = 'hidden' AND qa3.value = '1'
+              )
           GROUP BY all_q.sid, all_q.gid
       ) group_data ON s.id = group_data.sid
       WHERE s.id = ?

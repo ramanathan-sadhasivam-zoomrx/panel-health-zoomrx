@@ -47,9 +47,12 @@ export function SurveyCard({ survey, expanded, onExpand, cardWidth, style }: Sur
   // Ensure qualitativeComments is always an array
   const safeQualitativeComments = Array.isArray(qualitativeComments) ? qualitativeComments : [];
 
-  // Use backend values for display - no frontend calculations
+  // Use backend values for display
   const displayUserRating = survey.breakdown?.userRating?.value || userRating;
-  const displayUserSentiment = survey.breakdown?.userSentiment?.value || userSentiment;
+  // Show normalized sentiment as the main value
+  const displayUserSentiment = (survey.bayesianMetrics?.normalizedSentiment !== undefined)
+    ? survey.bayesianMetrics.normalizedSentiment
+    : (survey.breakdown?.userSentiment?.value || userSentiment);
   const displayDropoffRate = survey.breakdown?.dropoffRate?.value || dropOffPercent;
   const displayScreenoutRate = survey.breakdown?.screenoutRate?.value || screenOutPercent;
 
