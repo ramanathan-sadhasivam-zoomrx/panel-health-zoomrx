@@ -1,5 +1,7 @@
 # Dependencies
 node_modules/
+panel-health-client/node_modules/
+panel-health-server/node_modules/
 .pnp
 .pnp.js
 
