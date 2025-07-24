@@ -63,8 +63,8 @@ export default function LoginPage() {
       const tenantId = process.env.NEXT_PUBLIC_TENANT_ID;
       const clientId = process.env.NEXT_PUBLIC_CLIENT_ID;
       
-      // Force the correct redirect URI for staging - ALWAYS use frontend callback
-      const redirectUri = 'https://zeus-panelist-health-podb-patch-1-dev-0802230855.zoomrx.dev/auth/callback';
+      // Use environment variable for redirect URI
+      const redirectUri = process.env.NEXT_PUBLIC_REDIRECT_URI || 'http://localhost:3000/auth/callback';
 
       // Debug: Log environment variables
       console.log('🔍 OAuth Environment Variables:', {
@@ -76,8 +76,8 @@ export default function LoginPage() {
         envRedirectUri: process.env.NEXT_PUBLIC_REDIRECT_URI
       });
 
-      if (!tenantId || !clientId) {
-        setError('OAuth configuration is missing. Please check your environment variables.');
+      if (!tenantId || !clientId || !redirectUri) {
+        setError('OAuth configuration is missing. Please check your environment variables (TENANT_ID, CLIENT_ID, REDIRECT_URI).');
         return;
       }
 

@@ -63,7 +63,7 @@ app.use(session({
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     sameSite: 'lax', // Add sameSite for better security
-    domain: process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging' ? '.zoomrx.dev' : undefined // Allow subdomain sharing
+            domain: process.env.COOKIE_DOMAIN || (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging' ? '.zoomrx.dev' : undefined) // Allow subdomain sharing
   }
 }));
 
@@ -75,8 +75,7 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 // Add zoomrx domains to allowed origins
 const allAllowedOrigins = [
   ...allowedOrigins,
-  'https://zeus-panelist-health-podb-patch-1-dev-0802230855.zoomrx.dev',
-  'https://zeus-panelist-health-podb-patch-1-dev-0802230855.zoomrx.com'
+  process.env.CORS_ORIGIN || 'http://localhost:3000'
 ];
 
 console.log('🔧 CORS Configuration:', {
