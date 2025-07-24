@@ -595,16 +595,7 @@ class SurveyModel {
         };
       }
 
-      // Also calculate legacy experience score for comparison
-      const legacyExperienceScore = this.calculateExperienceScoreFromData({
-        userRating: surveyMetrics.average_rating || 0,
-        userSentiment: surveyComments.length > 0 
-          ? sentimentAnalyzer.calculateAverageSentiment(surveyComments.map(c => c.feedback_comment))
-          : 0,
-        dropoffRate: surveyMetrics.dropoff_percentage || 0,
-        screenoutRate: surveyMetrics.screenout_percentage || 0,
-        screenerQuestionCount: surveyScreener.total_screener_questions || 0
-      });
+
 
       // Ensure we have valid scores - keep legacy and Bayesian separate
       const finalUserSentiment = bayesianResult.adjustedMetrics?.adjustedSentiment || 0;
@@ -621,19 +612,18 @@ class SurveyModel {
         screenOutPercent: surveyMetrics.screenout_percentage || 0,
         questionsInScreener: surveyScreener.total_screener_questions || 0,
         qualitativeComments: surveyComments.length,
-        // Keep legacy experience score separate from Bayesian XScore
-        experienceScore: legacyExperienceScore.experienceScore || 50,
-        experienceCategory: legacyExperienceScore.category || 'fair',
-        experienceColor: legacyExperienceScore.color || 'text-yellow-600',
-        experienceBreakdown: legacyExperienceScore.breakdown,
+        // Use Bayesian score as the primary experience score
+        experienceScore: bayesianResult.xscore || 50,
+        experienceCategory: bayesianResult.category || 'fair',
+        experienceColor: bayesianResult.color || 'text-yellow-600',
+        experienceBreakdown: bayesianResult.breakdown,
         // Add Bayesian-specific data
         xscore: bayesianResult.xscore || 50, // New Bayesian XScore (separate from legacy)
         bayesianMetrics: bayesianResult.adjustedMetrics,
         smoothingInfo: bayesianResult.smoothingInfo,
         rawData: bayesianResult.rawData,
         breakdown: bayesianResult.breakdown, // Add the breakdown for frontend calculations
-        // Legacy score for comparison
-        legacyExperienceScore: legacyExperienceScore.experienceScore,
+
         adminPortalLink: `${process.env.ADMIN_PORTAL_BASE_URL || 'https://ap.zoomrx.com'}/#/projects/view/${survey.project_id}?pw-id=${survey.recent_project_wave_id}&s-id=${survey.id}&wave-id=${survey.last_wave_id}`,
         calculationDetails: {
           dropoff: {
@@ -713,52 +703,7 @@ class SurveyModel {
 
     }
     
-
-
     return surveysWithMetrics;
-  }
-
-  // Calculate experience score from data (without database query)
-  calculateExperienceScoreFromData(data) {
-    const { userRating, userSentiment, dropoffRate, screenoutRate, screenerQuestionCount } = data;
-    
-    // Use raw values as specified in requirements document with minimum user rating of 1
-    const rawData = {
-      userRating: Math.max(1, userRating || 0), // Minimum user rating of 1
-      userSentiment: userSentiment || 0,
-      dropoffRate: dropoffRate || 0,
-      screenoutRate: screenoutRate || 0,
-      screenerQuestionCount: screenerQuestionCount || 0
-    };
-    
-    try {
-      // Use the experience score calculator with raw values
-      const experienceScore = experienceScoreCalculator.calculateExperienceScore(rawData);
-
-      // The experience score calculator already handles 0-100 clamping
-      return {
-        experienceScore: experienceScore.score,
-        category: experienceScoreCalculator.getScoreCategory(experienceScore.score),
-        color: experienceScoreCalculator.getScoreColor(experienceScore.score),
-        breakdown: experienceScore.breakdown
-      };
-    } catch (error) {
-      console.error('Error calculating experience score:', error);
-      
-      // Return a fallback experience score
-      return {
-        experienceScore: 50, // Neutral score
-        category: 'fair',
-        color: 'text-yellow-600',
-        breakdown: {
-          userRating: { value: 5, contribution: 17.5, weight: 35 },
-          userSentiment: { value: 0, contribution: 12.5, weight: 25 },
-          dropoffRate: { value: 50, contribution: 10, weight: 20 },
-          screenoutRate: { value: 50, contribution: 7.5, weight: 15 },
-          screenerQuestionCount: { value: 5, contribution: 2.5, weight: 5 }
-        }
-      };
-    }
   }
 }
 
